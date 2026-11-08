@@ -283,7 +283,13 @@ def main():
     for sid, kind, p, meta in STORES:
         print('fetching', sid, '...', flush=True)
         try:
-            files = globals()['fetch_' + kind](p)
+            try:
+                files = globals()['fetch_' + kind](p)
+            except Exception as e:  # one retry for chains that usually work from abroad
+                if kind in ('carrefour', 'laib', 'hazi'):
+                    raise
+                print('  retrying', sid, 'after', type(e).__name__, flush=True)
+                files = globals()['fetch_' + kind](p)
             if 'price' not in files:
                 raise RuntimeError('no price file')
             P[sid] = parse_prices(files['price'])
