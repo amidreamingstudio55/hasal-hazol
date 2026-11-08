@@ -177,6 +177,7 @@ summary{cursor:pointer;font-weight:700}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-paste">הדבקת רשימה מווטסאפ</button>
       <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-fixed">הרשימה הקבועה שלנו</button>
+      <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-clear">ניקוי הרשימה</button>
     </div>
     <div class="statusline" id="l-count"></div>
     <div id="l-items" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -585,6 +586,10 @@ summary{cursor:pointer;font-weight:700}
   $('#l-settings').addEventListener('click', () => go('settings'));
   $('#l-share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));
   $('#l-paste').addEventListener('click', openPaste);
+  $('#l-clear').addEventListener('click', () => {
+    if (!LIST.length || !confirm('למחוק את כל המוצרים מהרשימה?')) return;
+    LIST = []; saveList(); renderList(); $('#l-add').focus();
+  });
   $('#l-fixed').addEventListener('click', () => {
     const f = LS.get('fixed');
     if (f == null) { toast('עוד אין רשימה קבועה. שומרים אותה בהגדרות.'); return; }
