@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>הסל הזול – צור הדסה</title>
+<title>הסל הזול</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -142,7 +142,8 @@ summary{cursor:pointer;font-weight:700}
     <p>לאן לשלוח? הכתובת קובעת אילו רשתות משלחות אליכם, כמה עולה המשלוח, ואילו סניפים קרובים.</p>
   </div>
   <div class="body">
-    <label class="field">ישוב<input id="a-city" type="text" autocomplete="address-level2"></label>
+    <label class="field">ישוב<input id="a-city" type="text" autocomplete="address-level2" list="a-towns"></label>
+    <datalist id="a-towns"><option value="צור הדסה"></option><option value="ראשון לציון"></option></datalist>
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
       <label class="field" style="grid-column:span 2">רחוב<input id="a-street" type="text" autocomplete="address-line1"></label>
       <label class="field">מספר<input id="a-num" type="text" inputmode="numeric"></label>
@@ -266,7 +267,7 @@ summary{cursor:pointer;font-weight:700}
     KT:{id:'KT', name:'קשת טעמים גבעת רם', mode:'store', fee:0, min:0, area:'jlm'},
     MH:{id:'MH', name:'מחסני השוק צור הדסה', mode:'store', fee:0, min:0, area:'local'}
   };
-  const AREAS = [
+  let AREAS = [
     {id:'delivery', label:'משלוח עד הבית', sub:'שופרסל אונליין, קרפור אונליין'},
     {id:'local', label:'קנייה בצור הדסה', sub:'מחסני השוק, כשהיא מפרסמת מחירים'},
     {id:'bs', label:'קנייה או איסוף בבית שמש', sub:'קרפור היפר'},
@@ -275,7 +276,13 @@ summary{cursor:pointer;font-weight:700}
   ];
   // what we checked for each town (only Tzur Hadassah so far)
   const TOWNS = {
+    'ראשון לציון': {
+      region: 'rishon',
+      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['ok','חצי חינם אונליין','משלוח 35.90 ₪ · מינימום 500 ₪'], ['q','טיב טעם אונליין','דמי המשלוח הם הערכה'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לכאן']],
+      near: [['ok','שופרסל דיל ז׳בוטינסקי','ז׳בוטינסקי 16'], ['ok','רמי לוי ראשון לציון','מתחם סינימה, שד׳ משה דיין'], ['ok','אושר עד ראשון לציון','אצל 26'], ['ok','יוחננוף רמת אליהו','משורר השואה 15'], ['ok','קשת טעמים ראשל״צ מערב','לח״י 4'], ['ok','קרפור מרקט ראשל״צ','החלמונית 29']]
+    },
     'צור הדסה': {
+      region: 'tzur',
       deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לכאן'], ['no','חצי חינם','לא משלחת לצור הדסה']],
       near: [['ok','מחסני השוק צור הדסה','בישוב'], ['ok','קרפור היפר בית שמש','קנייה בסניף'], ['ok','רמי לוי · אושר עד ביתר עילית','קנייה בסניף'], ['ok','יוחננוף · קשת טעמים ירושלים','קנייה בסניף']]
     }
@@ -519,7 +526,7 @@ summary{cursor:pointer;font-weight:700}
   $('#a-city').addEventListener('input', renderTown);
   $('#a-go').addEventListener('click', () => {
     SET.city = $('#a-city').value.trim() || 'צור הדסה'; SET.street = $('#a-street').value.trim(); SET.num = $('#a-num').value.trim();
-    saveSet(); LS.set('onboarded', '1'); go('list');
+    saveSet(); LS.set('onboarded', '1'); loadCatalog(); go('list');
   });
 
   // ---------- 1 · list ----------
@@ -790,6 +797,25 @@ summary{cursor:pointer;font-weight:700}
   $('#install-btn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#install-banner').hidden = true; });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+  // ---------- catalog (one per region, chosen by the town) ----------
+  let REGION = null;
+  const regionOf = city => (TOWNS[(city || '').trim()] || TOWNS['צור הדסה']).region;
+  function loadCatalog(){
+    const region = regionOf(SET.city);
+    if (region === REGION && CAT.length) return;
+    REGION = region; CAT = []; OPTIONS = []; dirty = true;
+    if (!$('#v-list').hidden) renderList();
+    fetch(region === 'tzur' ? 'catalog.json' : 'catalog-' + region + '.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
+      if (REGION !== region) return;
+      CAT = d.items; UPDATED = d.updated; REPORT = d.report || {};
+      STORES = d.meta ? d.meta.map(m => Object.assign({fee:0, min:0}, m)) : d.stores.map(id => META[id]).filter(Boolean);
+      if (d.areas) AREAS = d.areas.map(([id, label, sub]) => ({id, label, sub}));
+      dirty = true; OPTIONS = [];
+      const v = VIEWS.find(x => !$('#v-' + x).hidden);
+      if (v === 'list') renderList(); else if (v === 'settings') renderSettings();
+    }).catch(() => { $('#l-sub').textContent = 'טעינת המחירים נכשלה. נסו לרענן.'; });
+  }
+
   // ---------- start ----------
   (function initList(){
     const m = location.hash.match(/^#l=([A-Za-z0-9_-]+)/);
@@ -811,13 +837,7 @@ summary{cursor:pointer;font-weight:700}
   history.replaceState({v:first}, '', location.pathname);
   go(first, false);
 
-  fetch('catalog.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
-    CAT = d.items; UPDATED = d.updated; REPORT = d.report || {};
-    STORES = d.stores.map(id => META[id]).filter(Boolean);
-    dirty = true; OPTIONS = [];
-    const v = VIEWS.find(x => !$('#v-' + x).hidden);
-    if (v === 'list') renderList(); else if (v === 'settings') renderSettings();
-  }).catch(() => { $('#l-sub').textContent = 'טעינת המחירים נכשלה. נסו לרענן.'; });
+  loadCatalog();
 })();
 </script>
 </body>

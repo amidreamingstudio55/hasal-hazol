@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:                    # a new version of the site, or prices fetched from Israel, go live right away
     branches: [main]
-    paths: ['docs/**', 'scripts/**', 'data/local/**', '!docs/catalog.json']
+    paths: ['docs/**', 'scripts/**', 'data/local/**', '!docs/catalog*.json']
 
 permissions:
   contents: write
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "price-bot"
           git config user.email "price-bot@users.noreply.github.com"
-          git add docs/catalog.json
+          git add docs/catalog*.json
           git diff --cached --quiet || git commit -m "Prices $(date -u +%F)"
           git pull --rebase --autostash || true
           git push
