@@ -488,7 +488,7 @@ summary{cursor:pointer;font-weight:700}
   }
   const optName = o => o.used.map(s => s.name).join(' + ');
   function optMode(o){
-    if (o.used.length === 2) return o.used.map(s => s.mode === 'store' ? 'סניף' : 'משלוח').join(' + ') + (o.fees ? ' · כולל ' + fmt(o.fees) + ' ₪ משלוח' : '');
+    if (o.used.length === 2) return (o.used.every(s => s.mode === 'store') ? 'שתי נסיעות לסניפים' : o.used.map(s => s.mode === 'store' ? 'סניף' : 'משלוח').join(' + ')) + (o.fees ? ' · כולל ' + fmt(o.fees) + ' ₪ משלוח' : '');
     const s = o.used[0];
     return s.mode === 'store' ? 'קנייה בסניף' : 'משלוח עד הבית · כולל ' + fmt(s.fee) + ' ₪ משלוח';
   }
@@ -662,7 +662,8 @@ summary{cursor:pointer;font-weight:700}
     $('#r-note').hidden = !(NOTE && isRec); $('#r-note').textContent = NOTE;
     // alternatives
     const box = $('#r-alts'); box.textContent = '';
-    const list = [REC, ...OPTIONS.filter(x => x !== REC && x.minOk)].slice(0, 7);
+    const others = OPTIONS.filter(x => x !== REC && x.minOk);
+    const list = [REC, ...others.filter(x => x.used.length === 1), ...others.filter(x => x.used.length === 2).slice(0, 2)].slice(0, 8);
     list.forEach(x => {
       const d = x.total - REC.total;
       const extra = [];
