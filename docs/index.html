@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>הסל הזול – צור הדסה</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#17624b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="הסל הזול">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Suez+One&display=swap" rel="stylesheet">
@@ -69,6 +75,14 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
 .muted{color:var(--muted)}
 .foot{font-size:13px;color:var(--muted);max-width:90ch}
 #status{font-size:14px;color:var(--muted)}
+.banner{background:color-mix(in srgb, var(--hi) 30%, var(--panel));border:1px solid var(--hi);border-radius:var(--r);padding:10px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.banner[hidden]{display:none}
+button.wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
+.lists li label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.lists li input{margin-top:5px;accent-color:var(--accent)}
+.lists li input:checked + span{text-decoration:line-through;color:var(--muted)}
+.lists ul{list-style:none;padding:0}
+.saved{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -78,10 +92,19 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
     <p>מדביקים רשימת קניות, והמחשבון בודק כל מוצר במחירים הרשמיים של הרשתות, כולל משלוח ומינימום הזמנה, וממליץ איפה הכי משתלם לקנות. המחירים מתעדכנים כל בוקר מקובצי השקיפות הרשמיים. עדכון אחרון: <span id="updated">—</span>.</p>
   </header>
 
+  <div class="banner" id="shared-banner" hidden>
+    <span id="shared-text">נטענה רשימה ששותפה איתך.</span>
+    <button type="button" class="ghost" id="shared-undo">חזרה לרשימה הקודמת שלי</button>
+  </div>
+  <div class="banner" id="install-banner" hidden>
+    <span>אפשר להוסיף את הסל הזול למסך הבית ולפתוח אותו כמו אפליקציה.</span>
+    <button type="button" id="install-btn">הוספה למסך הבית</button>
+  </div>
+
   <div class="grid">
     <section class="card" aria-labelledby="list-h">
       <h2 id="list-h">רשימת הקניות</h2>
-      <p class="note">שורה לכל מוצר. כמות בתחילת השורה או בסופה ("2 חלב", "שמן 2"). כפילויות מתאחדות.</p>
+      <p class="note">שורה לכל מוצר. כמות בתחילת השורה או בסופה ("2 חלב", "שמן 2"). כפילויות מתאחדות. הרשימה ובחירות המותגים נשמרות במכשיר הזה. <span class="saved" id="saved"></span></p>
       <label for="list" class="muted" style="font-size:14px">הרשימה</label>
       <textarea id="list" spellcheck="false"></textarea>
       <div class="chips" id="store-chips" aria-label="רשתות לבדיקה"></div>
@@ -89,6 +112,10 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
         <button id="run" type="button">חשב את הסל</button>
         <button id="clear" type="button" class="ghost">נקה רשימה</button>
       </div>
+      <div class="row" style="margin-top:8px">
+        <button id="share" type="button" class="wa">שליחת הרשימה בווטסאפ</button>
+      </div>
+      <p class="note" style="margin-top:6px">הקישור שנשלח פותח את אותה רשימה, עם אותן בחירות מותג, אצל מי שמקבל אותו.</p>
       <p id="status" aria-live="polite">טוען מחירים…</p>
     </section>
 
@@ -115,9 +142,9 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
       <div class="card">
         <div class="row" style="justify-content:space-between">
           <h2 style="margin:0">רשימת קניות לכל מקום</h2>
-          <button id="copy" type="button" class="ghost">העתק את הרשימות</button>
+          <div class="row"><button id="copy" type="button" class="ghost">העתק את הרשימות</button><button id="share-lists" type="button" class="wa">שליחה בווטסאפ</button></div>
         </div>
-        <p class="note">לפי האפשרות שנבחרה. לחיצה על שורה בטבלת האפשרויות מחליפה אפשרות.</p>
+        <p class="note">לפי האפשרות שנבחרה. לחיצה על שורה בטבלת האפשרויות מחליפה אפשרות. בחנות אפשר לסמן כל מוצר שנכנס לעגלה.</p>
         <div class="lists" id="lists"></div>
       </div>
     </section>
@@ -207,6 +234,22 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
   ];
   const PRODUCE = ['אבוקדו','לימון','חציל','כרובית','בטטה','כרוב','גזר','פלפל','תפוח','תפוחים','דלעת','כרישה','פטרוזליה','כוסברה','כרפס','במיה','לוביה','רימון','תמרים','מנגולד','פטריות','חסה'];
 
+  // ---- family: saved list, remembered brand choices, sharing ----
+  const LS = {get(k){ try { return localStorage.getItem('hasal:' + k); } catch(e) { return null; } },
+              set(k,v){ try { localStorage.setItem('hasal:' + k, v); return true; } catch(e) { return false; } }};
+  const keyOf = t => t.replace(/['״"׳`]/g,'').replace(/\s+/g,' ').trim();
+  let CHOICES = {};   // line key -> item code, or 'cheapest'
+  try { CHOICES = JSON.parse(LS.get('choices') || '{}') || {}; } catch(e) { CHOICES = {}; }
+  const saveChoices = () => LS.set('choices', JSON.stringify(CHOICES));
+  const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/'))));
+  function shareLink(){
+    const keys = new Set(parseList($('#list').value).map(l => keyOf(l.text)));
+    const c = {}; Object.keys(CHOICES).forEach(k => { if (keys.has(k)) c[k] = CHOICES[k]; });
+    return location.origin + location.pathname + '#l=' + b64e(JSON.stringify({t: $('#list').value, c}));
+  }
+  function openWhatsApp(text){ window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+
   let CAT = [];
   const $ = s => document.querySelector(s);
   const fmt = n => n.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -222,8 +265,35 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
     chipsEl.appendChild(lab);
   }); }
 
-  $('#list').value = SAMPLE;
-  $('#clear').addEventListener('click', () => { $('#list').value = ''; $('#list').focus(); });
+  // which list to show: a shared link, then the saved list, then the sample
+  (function initList(){
+    const m = location.hash.match(/^#l=([A-Za-z0-9_-]+)/);
+    if (m) {
+      try {
+        const d = JSON.parse(b64d(m[1]));
+        const prev = LS.get('list'), prevC = LS.get('choices');
+        if (prev != null) { LS.set('backup-list', prev); LS.set('backup-choices', prevC || '{}'); }
+        $('#list').value = d.t || '';
+        Object.assign(CHOICES, d.c || {}); saveChoices(); LS.set('list', $('#list').value);
+        $('#shared-banner').hidden = false;
+        $('#shared-undo').hidden = prev == null;
+        history.replaceState(null, '', location.pathname);
+        return;
+      } catch(e) { /* broken link: fall through */ }
+    }
+    const saved = LS.get('list');
+    $('#list').value = saved != null ? saved : SAMPLE;
+  })();
+  window.addEventListener('hashchange', () => { if (/^#l=/.test(location.hash)) location.reload(); });
+  $('#shared-undo').addEventListener('click', () => {
+    $('#list').value = LS.get('backup-list') || '';
+    try { CHOICES = JSON.parse(LS.get('backup-choices') || '{}'); } catch(e) { CHOICES = {}; }
+    saveChoices(); LS.set('list', $('#list').value); $('#shared-banner').hidden = true; run();
+  });
+  let saveT;
+  $('#list').addEventListener('input', () => { clearTimeout(saveT); saveT = setTimeout(() => { if (LS.set('list', $('#list').value)) $('#saved').textContent = 'נשמר.'; }, 400); });
+  $('#clear').addEventListener('click', () => { $('#list').value = ''; LS.set('list', ''); $('#list').focus(); });
+  $('#share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));
 
   function parseList(text){
     const seen = new Map();
@@ -264,7 +334,7 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
       const lowest = it => Math.min(...it[4].filter(p => p > 0));
       cands.sort((a,b) => (b[4].filter(p => p > 0).length - a[4].filter(p => p > 0).length) || (lowest(a) - lowest(b)));
       cands = cands.slice(0, 20);
-      return {line, mode:'pack', cands, chosen: cands.length ? 'cheapest' : -1, variety: true};
+      return remember({line, mode:'pack', cands, chosen: cands.length ? 'cheapest' : -1, variety: true});
     }
     const toks = q.split(/\s+/).filter(Boolean);
     let cands = CAT.filter(it => toks.every(tk => it[1].includes(tk)));
@@ -276,7 +346,18 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
     });
     cands.sort((a,b) => b._s - a._s);
     cands = cands.slice(0, 12);
-    return {line, mode:'pack', cands, chosen: cands.length ? 0 : -1};
+    return remember({line, mode:'pack', cands, chosen: cands.length ? 0 : -1});
+  }
+
+  // apply a brand choice remembered for this line (on this device or from a shared link)
+  function remember(m){
+    const c = CHOICES[keyOf(m.line.text)];
+    if (!c || !m.cands.length) return m;
+    if (c === 'cheapest') { m.chosen = 'cheapest'; return m; }
+    let i = m.cands.findIndex(it => it[0] === c);
+    if (i < 0) { const it = CAT.find(x => x[0] === c); if (it) { m.cands.unshift(it); i = 0; } }
+    if (i >= 0) m.chosen = i;
+    return m;
   }
 
   // price of a matched line at store k (per line total), and the item used
@@ -377,7 +458,11 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
         const op = document.createElement('option'); op.value = 'cheapest'; op.textContent = 'הזול ביותר בכל רשת (כל מוצר מתאים)'; sel.appendChild(op);
         sel.value = String(m.chosen);
         if (m.variety) { const v = document.createElement('div'); v.className = 'muted'; v.style.fontSize = '12px'; v.textContent = m.cands.length + ' סוגים נמצאו. ברירת המחדל: הזול בכל רשת. אפשר לבחור סוג מסוים.'; setTimeout(() => c.appendChild(v)); }
-        sel.addEventListener('change', () => { m.chosen = sel.value === 'cheapest' ? 'cheapest' : +sel.value; compute(); render(); });
+        sel.addEventListener('change', () => {
+          m.chosen = sel.value === 'cheapest' ? 'cheapest' : +sel.value;
+          CHOICES[keyOf(m.line.text)] = m.chosen === 'cheapest' ? 'cheapest' : m.cands[m.chosen][0]; saveChoices();
+          compute(); render();
+        });
         c.appendChild(sel);
       }
       tr.appendChild(c);
@@ -401,7 +486,12 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
       c.appendChild(sub);
       const ul = document.createElement('ul');
       const txt = [s.name + ':'];
-      rows.forEach(x => { const li = document.createElement('li'); const line = (x.m.line.qty !== 1 ? x.m.line.qty + ' × ' : '') + x.p.it[1] + ' – ' + fmt(x.p.total) + ' ₪'; li.textContent = line; ul.appendChild(li); txt.push('• ' + line); });
+      rows.forEach(x => {
+        const li = document.createElement('li'); const line = (x.m.line.qty !== 1 ? x.m.line.qty + ' × ' : '') + x.p.it[1] + ' – ' + fmt(x.p.total) + ' ₪';
+        const lab = document.createElement('label'); const cb = document.createElement('input'); cb.type = 'checkbox';
+        const sp = document.createElement('span'); sp.textContent = line; lab.appendChild(cb); lab.appendChild(sp); li.appendChild(lab);
+        ul.appendChild(li); txt.push('• ' + line);
+      });
       c.appendChild(ul); box.appendChild(c); parts.push(txt.join('\n'));
     });
     LIST_TEXT = parts.join('\n\n');
@@ -412,6 +502,14 @@ select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);b
     catch(e) { $('#copy').textContent = 'ההעתקה נחסמה'; }
     setTimeout(() => $('#copy').textContent = 'העתק את הרשימות', 1800);
   });
+
+  $('#share-lists').addEventListener('click', () => { if (LIST_TEXT) openWhatsApp('הסל הזול – מה קונים ואיפה:\n\n' + LIST_TEXT); });
+
+  // install as an app (Android/desktop Chrome); iPhone: Share > Add to Home Screen
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#install-banner').hidden = false; });
+  $('#install-btn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#install-banner').hidden = true; });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
   function run(){
     if (!CAT.length) return;

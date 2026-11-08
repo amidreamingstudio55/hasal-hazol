@@ -9,8 +9,10 @@ import xml.etree.ElementTree as ET
 from collections import Counter
 
 OUT = os.path.join(os.path.dirname(__file__), '..', 'docs')
+LOCAL = os.path.join(os.path.dirname(__file__), '..', 'data', 'local')  # copies fetched from Israel (chains that block servers abroad)
+LOCAL_MAX_DAYS = 3
 UA = 'Mozilla/5.0 (hasal-hazol price updater)'
-NOW = datetime.datetime.utcnow() + datetime.timedelta(hours=2)
+NOW = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)).replace(tzinfo=None)
 
 # id, kind, params
 STORES = [
@@ -35,7 +37,7 @@ def opener():
     return op
 
 
-def get(op, url, data=None, timeout=120):
+def get(op, url, data=None, timeout=45):
     if data is not None:
         data = urllib.parse.urlencode(data).encode()
     with op.open(url, data=data, timeout=timeout) as r:
@@ -59,7 +61,7 @@ def fetch_shufersal(p):
 
 def fetch_carrefour(p):
     op = opener(); out = {}
-    html = get(op, 'https://prices.carrefour.co.il/').decode('utf-8', 'replace')
+    html = get(op, 'https://prices.carrefour.co.il/', timeout=20).decode('utf-8', 'replace')
     path = (re.search(r'path\s*=\s*["\'](\d{8})', html) or [None, NOW.strftime('%Y%m%d')])[1]
     names = re.findall(r'"name"\s*:\s*"((?:PriceFull|PromoFull)[^"]+\.gz)"', html)
     for kind, pre in (('price', 'pricefull'), ('promo', 'promofull')):
@@ -88,12 +90,12 @@ def fetch_cerberus(p):
 
 def fetch_laib(p):
     op = opener(); out = {}
-    for back in range(14):
+    for back in range(4):
         d = (NOW - datetime.timedelta(days=back)).strftime('%d/%m/%Y')
         for kind, ft in (('price', 'pricefull'), ('promo', 'promofull')):
             if kind in out:
                 continue
-            html = get(op, f'https://laibcatalog.co.il/NBCompetitionRegulations.aspx?code={p["code"]}&fileType={ft}&date={urllib.parse.quote(d)}').decode('utf-8', 'replace')
+            html = get(op, f'https://laibcatalog.co.il/NBCompetitionRegulations.aspx?code={p["code"]}&fileType={ft}&date={urllib.parse.quote(d)}', timeout=20).decode('utf-8', 'replace')
             links = re.findall(r'href="([^"]+\.gz)"', html)
             if links:
                 out[kind] = get(op, 'https://laibcatalog.co.il/' + links[0].replace('\\', '/'))
@@ -172,18 +174,64 @@ def parse_promos(raw):
     return out
 
 
+def usable(sid, promos):
+    """Keep only promos the family can actually use (see the rule in main)."""
+    out = {}
+    for code, lst in promos.items():
+        keep = [[mq, dp, False, ''] for mq, dp, club, desc in lst
+                if dp > 0 and not (club and (sid not in CLUB_OK or EXC.search(desc)))]
+        if keep:
+            out[code] = keep
+    return out
+
+
+def save_local(sid, price_file, promo_file=None):
+    """Run on a computer in Israel: parse downloaded files into data/local/<sid>.json."""
+    with open(price_file, 'rb') as f:
+        P = parse_prices(f.read())
+    R = {}
+    if promo_file:
+        with open(promo_file, 'rb') as f:
+            R = usable(sid, parse_promos(f.read()))
+    os.makedirs(LOCAL, exist_ok=True)
+    with open(os.path.join(LOCAL, sid + '.json'), 'w', encoding='utf-8') as f:
+        json.dump({'date': NOW.strftime('%Y-%m-%d %H:%M'), 'P': P, 'R': R}, f, ensure_ascii=False, separators=(',', ':'))
+    print(sid, len(P), 'items', len(R), 'promos')
+
+
+def load_local(sid):
+    fn = os.path.join(LOCAL, sid + '.json')
+    if not os.path.exists(fn):
+        return None
+    with open(fn, encoding='utf-8') as f:
+        d = json.load(f)
+    age = NOW - datetime.datetime.strptime(d['date'], '%Y-%m-%d %H:%M')
+    if age > datetime.timedelta(days=LOCAL_MAX_DAYS):
+        return None
+    return d
+
+
 def main():
     P, R, ok, report = {}, {}, [], {}
     for sid, kind, p in STORES:
+        print('fetching', sid, '...', flush=True)
         try:
             files = globals()['fetch_' + kind](p)
             if 'price' not in files:
-                report[sid] = 'no price file'; continue
+                raise RuntimeError('no price file')
             P[sid] = parse_prices(files['price'])
             R[sid] = parse_promos(files['promo']) if 'promo' in files else {}
             ok.append(sid); report[sid] = f'{len(P[sid])} items'
+            print(' ', sid, report[sid], flush=True)
         except Exception as e:  # keep going with the other chains
             report[sid] = f'error: {type(e).__name__}: {e}'[:200]
+            print(' ', sid, report[sid], flush=True)
+        if sid not in ok:
+            d = load_local(sid)
+            if d:
+                P[sid] = d['P']; R[sid] = {c: [tuple(x) for x in v] for c, v in d['R'].items()}
+                ok.append(sid); report[sid] += f' -> local copy from {d["date"]} ({len(P[sid])} items)'
+                print(' ', sid, 'using local copy from', d['date'], flush=True)
     print(json.dumps(report, ensure_ascii=False, indent=1))
     if len(ok) < 3:
         print('Too few stores fetched; keeping the previous catalog.')
@@ -216,4 +264,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # python update_prices.py --local CO PriceFull.gz PromoFull.gz
+    if len(sys.argv) >= 4 and sys.argv[1] == '--local':
+        save_local(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
+    else:
+        main()
