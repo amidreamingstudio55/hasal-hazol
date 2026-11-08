@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הסל הזול – צור הדסה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Suez+One&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* שוק בבוקר: ירוק עלים כהה, צהוב לימון לסימון החיסכון, נייר קר */
+  --bg:#f3f5f2; --panel:#ffffff; --ink:#1b2620; --muted:#5d6b63; --line:#d9e0db;
+  --accent:#17624b; --accent-ink:#ffffff; --hi:#f4c430; --hi-ink:#2a2200;
+  --ok:#1f7a4d; --warn:#9a6700; --bad:#b4232c;
+  --font-display:"Suez One", "Assistant", serif;
+  --font-body:"Assistant", "Segoe UI", Arial, sans-serif;
+  --r:10px;
+  /* פריסה: עמודת רשימה צרה בימין, תוצאות רחבות משמאל; עמודה אחת בטלפון */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111915; --panel:#18221d; --ink:#e7eee9; --muted:#9fb0a6; --line:#2b3a32;
+    --accent:#4fb38f; --accent-ink:#0b1712; --hi:#e8b923; --hi-ink:#1e1800;
+    --ok:#5cc58e; --warn:#e0a83a; --bad:#ef6b72; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111915; --panel:#18221d; --ink:#e7eee9; --muted:#9fb0a6; --line:#2b3a32;
+  --accent:#4fb38f; --accent-ink:#0b1712; --hi:#e8b923; --hi-ink:#1e1800;
+  --ok:#5cc58e; --warn:#e0a83a; --bad:#ef6b72; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:18px}
+header h1{font-family:var(--font-display);font-weight:400;font-size:clamp(28px,4vw,40px);margin:0;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
+.grid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card h2{font-size:18px;margin:0 0 4px;font-weight:700}
+.note{color:var(--muted);font-size:14px;margin:0 0 10px}
+textarea{width:100%;min-height:340px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);color:var(--ink);font:inherit;line-height:1.6}
+textarea:focus,select:focus,button:focus-visible,input:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:700;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 16px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:14px;background:var(--bg)}
+.chip input{accent-color:var(--accent)}
+.best{border:2px solid var(--accent);background:var(--panel)}
+.best .kicker{font-size:14px;color:var(--muted)}
+.best .name{font-family:var(--font-display);font-size:26px;line-height:1.2;margin:2px 0}
+.big{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+.save{display:inline-block;background:var(--hi);color:var(--hi-ink);border-radius:6px;padding:2px 8px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:600;background:var(--panel);position:sticky;top:0}
+td.num{white-space:nowrap}
+td.low{color:var(--ok);font-weight:700}
+.scroll{overflow:auto;max-height:520px}
+.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)} .pill.mut{color:var(--muted)}
+select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);padding:3px 6px}
+.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.lists .card{background:var(--bg)}
+.lists ul{margin:6px 0 0;padding:0 18px 0 0}
+.muted{color:var(--muted)}
+.foot{font-size:13px;color:var(--muted);max-width:90ch}
+#status{font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>הסל הזול</h1>
+    <p>מדביקים רשימת קניות, והמחשבון בודק כל מוצר במחירים הרשמיים של הרשתות, כולל משלוח ומינימום הזמנה, וממליץ איפה הכי משתלם לקנות. המחירים מתעדכנים כל בוקר מקובצי השקיפות הרשמיים. עדכון אחרון: <span id="updated">—</span>.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="list-h">
+      <h2 id="list-h">רשימת הקניות</h2>
+      <p class="note">שורה לכל מוצר. כמות בתחילת השורה או בסופה ("2 חלב", "שמן 2"). כפילויות מתאחדות.</p>
+      <label for="list" class="muted" style="font-size:14px">הרשימה</label>
+      <textarea id="list" spellcheck="false"></textarea>
+      <div class="chips" id="store-chips" aria-label="רשתות לבדיקה"></div>
+      <div class="row" style="margin-top:12px">
+        <button id="run" type="button">חשב את הסל</button>
+        <button id="clear" type="button" class="ghost">נקה רשימה</button>
+      </div>
+      <p id="status" aria-live="polite">טוען מחירים…</p>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="card best" id="best">
+        <div class="kicker">ההמלצה</div>
+        <div class="name" id="best-name">—</div>
+        <div class="row"><span class="big" id="best-total">—</span><span id="best-save"></span></div>
+        <p class="note" id="best-why" style="margin-top:6px"></p>
+      </div>
+
+      <div class="card">
+        <h2>כל האפשרויות</h2>
+        <p class="note">רשת אחת או פיצול בין שתיים. כל מוצר נקנה במקום הזול מבין השניים, ולכל רשת במשלוח נוספים דמי משלוח.</p>
+        <div class="scroll" style="max-height:340px"><table id="opts"><thead><tr><th>אפשרות</th><th>מוצרים</th><th>משלוח</th><th>סה״כ</th><th>מצב</th></tr></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="card">
+        <h2>המוצרים שנמצאו</h2>
+        <p class="note">אפשר להחליף מוצר מהרשימה הנפתחת. ירקות, פירות ובשר מחושבים לפי ק״ג, במוצר הזול המתאים בכל רשת.</p>
+        <div class="scroll"><table id="items"><thead></thead><tbody></tbody></table></div>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <h2 style="margin:0">רשימת קניות לכל מקום</h2>
+          <button id="copy" type="button" class="ghost">העתק את הרשימות</button>
+        </div>
+        <p class="note">לפי האפשרות שנבחרה. לחיצה על שורה בטבלת האפשרויות מחליפה אפשרות.</p>
+        <div class="lists" id="lists"></div>
+      </div>
+    </section>
+  </div>
+
+  <p class="foot">המקור: קובצי המחירים והמבצעים שהרשתות מפרסמות לפי חוק המזון. נכללים מבצעים פתוחים לכולם בכמות שבסל, ובשופרסל גם מבצעי מועדון (בלי קופונים, מתנות ומבצעים שמותנים בסכום קנייה). הסופר החברתי של ההסתדרות לא מפרסם קובצי מחירים, ולכן הוא לא בהשוואה. דמי משלוח ומינימום הזמנה לפי פרסומי הרשתות, ומינימום של 250 ₪ לשופרסל ולקרפור הוא הנחה. חצי חינם לא משלחת לצור הדסה ולכן לא נכללת. מחירי סניפים לפי הקובץ של אותו סניף. ויקטורי ומחסני השוק מופיעים רק בימים שהן מפרסמות קבצים. המחיר בקופה עשוי להשתנות. אב טיפוס לפיילוט משפחתי. הקוד: github.com/amidreamingstudio55/hasal-hazol</p>
+</div>
+
+<script>
+(function(){
+  const META = {
+    SH:{id:'SH', name:'שופרסל אונליין (מועדון)', mode:'delivery', fee:35.9, min:250, ok:true},
+    CO:{id:'CO', name:'קרפור אונליין', mode:'delivery', fee:29.9, min:250, ok:true, note:'לא אומת שמשלחת לצור הדסה'},
+    CB:{id:'CB', name:'קרפור היפר בית שמש', mode:'store', fee:0, min:0, ok:true},
+    RL:{id:'RL', name:'רמי לוי ביתר עילית', mode:'store', fee:0, min:0, ok:true},
+    OA:{id:'OA', name:'אושר עד ביתר עילית', mode:'store', fee:0, min:0, ok:true},
+    YO:{id:'YO', name:'יוחננוף תלפיות', mode:'store', fee:0, min:0, ok:true},
+    KT:{id:'KT', name:'קשת טעמים גבעת רם', mode:'store', fee:0, min:0, ok:true},
+    MH:{id:'MH', name:'מחסני השוק צור הדסה', mode:'store', fee:0, min:0, ok:true},
+    VI:{id:'VI', name:'ויקטורי אונליין', mode:'delivery', fee:35.9, min:250, ok:true, note:'דמי משלוח הם הערכה'}
+  };
+  let STORES = [];
+  const SAMPLE = `קוטג'
+2 חלב דל לקטוז
+חלב רגיל
+חלב שיבולת
+גבינה צהובה
+גבינה בולגרית
+ביצים
+2 טונה בשמן
+2 שמן קנולה
+שמן זית
+רסק עגבניות
+עגבניות מרוסקות
+גרגרי חומוס
+פסטה
+פתיתים
+פירורי לחם
+טחינה
+מיונז
+קטשופ
+שוקולית
+פרינגלס
+עוגיות מרבה
+מלפפונים
+2 תפוחי אדמה
+בצל יבש
+אבוקדו
+חציל
+בטטה
+כרובית
+לימון
+2 עוף שלם
+שוקיים
+חזה עוף
+בשר טחון
+פרגיות`;
+  const SYN = [
+    [/^קל שמן|^תרסיס שמן|^ספריי שמן|^שמן בתרסיס/, '%תרסיס.*שמן|תרסיס פאם'],
+    [/^קמח ללא גלוטן|^קמח נטול גלוטן|^קמח לאפייה ללא גלוטן/, '%^(קמח|מיקס|תערובת קמחים).*(ללא|נטול) גלוטן'],
+    [/^בולגרית פיראוס|^בולגרית קוביות|^קוביות בולגרית/, '%בולגרית.*קובי|קובי.*בולגרית'],
+    [/^מלפפון חמוץ|^מלפפונים חמוצים|^חמוצים/, 'מלפפונים במלח'],
+    [/^שוקו$/, 'שוקו ליטר'],
+    [/^גבינה צהובה מגורדת|^צהובה מגורדת/, 'צהובה מגורדת'],
+    [/^חלב עופרי|^חלב דל לקטוז|^חלב נטול לקטוז/, 'חלב לקטוז'],
+    [/^חלב שי?בולת|^חלב שבולת|^משקה שיבולת/, 'משקה שיבולת שועל'],
+    [/^חלב רגיל|^חלב$/, 'חלב 3%'],
+    [/^קוטג/, 'קוטג 250'],
+    [/^ביצים|^ביצה/, 'ביצים L'],
+    [/^פרורי לחם|^פירורי לחם/, 'פירורי לחם'],
+    [/^נייר כסף/, 'רדיד אלומיניום'],
+    [/^נרות נשמה|^נר נשמה/, 'נר נשמה'],
+    [/^גמבה/, 'פלפל אדום'],
+    [/^תפוחי אדמה|^תפוח אדמה/, '~תפוח אדמה|תפו"א'],
+    [/^מלפפונים|^מלפפון/, '~מלפפון'],
+    [/^עגבניות$|^עגבניה$/, '~עגבני'],
+    [/^בצל יבש|^בצל$/, '~בצל יבש'],
+    [/^בצל אדום/, '~בצל אדום'],
+    [/^שוקית|^שוקיים/, '~שוקיים'],
+    [/^סלומון|^סלמון|^דג סלומון/, '~סלמון'],
+    [/^בשר טחון|^טחון/, '~בשר בקר טחון|טחון בקר|בשר טחון'],
+    [/^עוף שלם/, '~עוף שלם'],
+    [/^חזה עוף/, '~חזה עוף'],
+    [/^פרגיות|^פרגית/, '~פרגי'],
+    [/^שעועית אדומה קפואה/, 'שעועית אדומה'],
+    [/^שום קלוף/, 'שום קלוף']
+  ];
+  const PRODUCE = ['אבוקדו','לימון','חציל','כרובית','בטטה','כרוב','גזר','פלפל','תפוח','תפוחים','דלעת','כרישה','פטרוזליה','כוסברה','כרפס','במיה','לוביה','רימון','תמרים','מנגולד','פטריות','חסה'];
+
+  let CAT = [];
+  const $ = s => document.querySelector(s);
+  const fmt = n => n.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const idx = id => STORES.findIndex(s => s.id === id);
+
+  // chips
+  const chipsEl = $('#store-chips');
+  function buildChips(){ chipsEl.textContent = ''; STORES.forEach(s => {
+    const lab = document.createElement('label'); lab.className = 'chip';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'st-' + s.id; cb.checked = s.ok; cb.disabled = !s.ok;
+    lab.appendChild(cb); lab.appendChild(document.createTextNode(s.name + (s.mode === 'store' ? ' (בחנות)' : ' (משלוח)')));
+    if (!s.ok) { lab.title = s.note; lab.style.opacity = .6; }
+    chipsEl.appendChild(lab);
+  }); }
+
+  $('#list').value = SAMPLE;
+  $('#clear').addEventListener('click', () => { $('#list').value = ''; $('#list').focus(); });
+
+  function parseList(text){
+    const seen = new Map();
+    text.split(/\n/).forEach(raw => {
+      let l = raw.replace(/\[[ xX]?\]/g,'').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim();
+      if (!l) return;
+      let q = 1, m;
+      if ((m = l.match(/^(.*?)\s*[×xX*]\s*(\d+(?:\.\d+)?)\s*$/))) { q = +m[2]; l = m[1].trim(); }
+      else if ((m = l.match(/^(\d+(?:\.\d+)?)\s*[×xX*]\s*(.+)$/))) { q = +m[1]; l = m[2].trim(); }
+      else       if ((m = l.match(/^(\d+(?:\.\d+)?)\s+(.+)$/))) { q = +m[1]; l = m[2]; }
+      else if ((m = l.match(/^(.+?)\s+(\d+(?:\.\d+)?)$/))) { q = +m[2]; l = m[1]; }
+      const key = l.replace(/['״"׳`]/g,'');
+      if (!seen.has(key)) seen.set(key, {text:l, qty:q});
+    });
+    return [...seen.values()];
+  }
+
+  function queryFor(text){
+    const t = text.replace(/['׳`]/g,'');
+    for (const [re, q] of SYN) if (re.test(t)) return q;
+    if (PRODUCE.some(p => t.startsWith(p))) return '~' + t.split(' ')[0].replace(/ים$|ות$/, '');
+    return t;
+  }
+
+  const hasPrice = (it, k) => it[4][k] > 0;
+  const unit = (it, k, qty) => { const p = it[4][k]; if (!(p > 0)) return null; const pr = it[5][k]; return (pr && qty >= pr[0]) ? pr[1] : p; };
+
+  function match(line){
+    const q = queryFor(line.text);
+    if (q.startsWith('~')) {
+      const alts = q.slice(1).split('|');
+      const cands = CAT.filter(it => (it[3] === 1 || /1 ?ק"?ג|קג|\s1$/.test(it[1])) && alts.some(a => it[1].startsWith(a)) && !/אורגני|במשקל.*מלח|כבוש|חמוץ|מטוגן|שבבים|פסטרמה|מעושן|קפוא|נקניק|בגריל|מבושל|כבש/.test(it[1]));
+      return {line, mode:'fresh', cands, chosen:'auto'};
+    }
+    if (q.startsWith('%')) {
+      const re = new RegExp(q.slice(1));
+      let cands = CAT.filter(it => re.test(it[1]) && !/עוגה|בראוני|נאצ|אטריות|חטיף/.test(it[1]));
+      const lowest = it => Math.min(...it[4].filter(p => p > 0));
+      cands.sort((a,b) => (b[4].filter(p => p > 0).length - a[4].filter(p => p > 0).length) || (lowest(a) - lowest(b)));
+      cands = cands.slice(0, 20);
+      return {line, mode:'pack', cands, chosen: cands.length ? 'cheapest' : -1, variety: true};
+    }
+    const toks = q.split(/\s+/).filter(Boolean);
+    let cands = CAT.filter(it => toks.every(tk => it[1].includes(tk)));
+    cands.forEach(it => {
+      const n = it[4].filter(p => p > 0).length;
+      const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
+      const med = ps[Math.floor(ps.length/2)] || 1e9;
+      it._s = n * 100 + (it[1].startsWith(toks[0]) ? 300 : 0) - med * 0.5;
+    });
+    cands.sort((a,b) => b._s - a._s);
+    cands = cands.slice(0, 12);
+    return {line, mode:'pack', cands, chosen: cands.length ? 0 : -1};
+  }
+
+  // price of a matched line at store k (per line total), and the item used
+  function linePrice(m, k){
+    const qty = m.line.qty;
+    if (m.mode === 'fresh' || m.chosen === 'cheapest') {
+      let best = null;
+      for (const it of m.cands) { const u = unit(it, k, qty); if (u != null && (best == null || u < best.u)) best = {u, it}; }
+      return best ? {total: best.u * qty, it: best.it, u: best.u} : null;
+    }
+    const it = m.cands[m.chosen]; if (!it) return null;
+    const u = unit(it, k, qty); return u == null ? null : {total: u * qty, it, u};
+  }
+
+  let MATCHES = [], OPTIONS = [], SEL = 0;
+
+  function active(){ return STORES.map((s,k) => ({...s, k})).filter(s => s.ok && $('#st-' + s.id).checked); }
+
+  function compute(){
+    const act = active();
+    const found = MATCHES.filter(m => m.cands.length);
+    const subsets = [];
+    act.forEach((a,i) => { subsets.push([a]); act.slice(i+1).forEach(b => subsets.push([a,b])); });
+    OPTIONS = subsets.map(sub => {
+      const assign = new Map(sub.map(s => [s.id, []]));
+      let total = 0, missing = 0;
+      found.forEach(m => {
+        let best = null;
+        sub.forEach(s => { const p = linePrice(m, s.k); if (p && (best == null || p.total < best.p.total - 1e-9 || (Math.abs(p.total-best.p.total)<1e-9 && s.mode==='delivery'))) best = {s, p}; });
+        if (!best) { missing++; return; }
+        total += best.p.total; assign.get(best.s.id).push({m, p: best.p});
+      });
+      const fees = sub.reduce((a,s) => a + (assign.get(s.id).length ? s.fee : 0), 0);
+      const used = sub.filter(s => assign.get(s.id).length);
+      const minOk = used.every(s => s.mode !== 'delivery' || assign.get(s.id).reduce((a,x) => a + x.p.total, 0) >= s.min);
+      const trips = used.filter(s => s.mode === 'store').length;
+      return {sub, used, assign, products: total, fees, total: total + fees, missing, minOk, trips};
+    }).filter(o => o.used.length === o.sub.length);
+    OPTIONS.sort((a,b) => (a.missing - b.missing) || ((b.minOk?1:0) - (a.minOk?1:0)) || (a.total - b.total));
+    SEL = 0;
+  }
+
+  function optName(o){ return o.used.map(s => s.name).join(' + '); }
+
+  function render(){
+    const tb = $('#opts tbody'); tb.textContent = '';
+    if (!OPTIONS.length) { $('#best-name').textContent = 'אין תוצאות'; return; }
+    const single = OPTIONS.filter(o => o.used.length === 1 && !o.missing && o.minOk);
+    const bestDel = single.filter(o => o.used[0].mode === 'delivery').sort((a,b)=>a.total-b.total)[0];
+    OPTIONS.forEach((o,i) => {
+      const tr = document.createElement('tr'); tr.style.cursor = 'pointer'; tr.tabIndex = 0;
+      if (i === SEL) tr.style.background = 'color-mix(in srgb, var(--hi) 22%, transparent)';
+      const cells = [optName(o), fmt(o.products), fmt(o.fees), fmt(o.total)];
+      cells.forEach((c,j) => { const td = document.createElement('td'); td.textContent = c; if (j) td.className = 'num'; tr.appendChild(td); });
+      const td = document.createElement('td'); const pill = document.createElement('span');
+      if (o.missing) { pill.className = 'pill bad'; pill.textContent = 'חסרים ' + o.missing; }
+      else if (!o.minOk) { pill.className = 'pill warn'; pill.textContent = 'מתחת למינימום'; }
+      else if (o.trips > 1) { pill.className = 'pill warn'; pill.textContent = '2 נסיעות'; }
+      else if (o.used.some(s => s.mode === 'store')) { pill.className = 'pill mut'; pill.textContent = o.used.length > 1 ? 'משלוח + נסיעה' : 'נסיעה לסניף'; }
+      else { pill.className = 'pill ok'; pill.textContent = 'משלוח'; }
+      td.appendChild(pill); tr.appendChild(td);
+      const pick = () => { SEL = i; render(); };
+      tr.addEventListener('click', pick); tr.addEventListener('keydown', e => { if (e.key === 'Enter') pick(); });
+      tb.appendChild(tr);
+    });
+    const o = OPTIONS[SEL];
+    $('#best-name').textContent = optName(o);
+    $('#best-total').textContent = fmt(o.total) + ' ₪';
+    const worst = single.length ? Math.max(...single.map(x => x.total)) : null;
+    const saveEl = $('#best-save'); saveEl.textContent = '';
+    if (worst && worst - o.total > 0.5) { const s = document.createElement('span'); s.className = 'save'; s.textContent = 'חוסך ' + fmt(worst - o.total) + ' ₪ מול היקר'; saveEl.appendChild(s); }
+    const why = [];
+    why.push(o.used.map(s => s.mode === 'store' ? s.name + ': קנייה בסניף' : s.name + ': משלוח ' + fmt(s.fee) + ' ₪').join(' · '));
+    if (bestDel && bestDel !== o) why.push('הזול במשלוח עד הבית: ' + optName(bestDel) + ', ' + fmt(bestDel.total) + ' ₪.');
+    const nf = MATCHES.filter(m => !m.cands.length).length;
+    if (nf) why.push(nf + ' שורות לא נמצאו ואינן בחישוב.');
+    $('#best-why').textContent = why.join(' ');
+    renderItems(); renderLists();
+  }
+
+  function renderItems(){
+    const act = active();
+    const th = $('#items thead'); th.textContent = '';
+    const hr = document.createElement('tr');
+    ['מהרשימה','כמות','המוצר'].concat(act.map(s => s.name)).forEach(t => { const x = document.createElement('th'); x.textContent = t; hr.appendChild(x); });
+    th.appendChild(hr);
+    const tb = $('#items tbody'); tb.textContent = '';
+    MATCHES.forEach(m => {
+      const tr = document.createElement('tr');
+      const a = document.createElement('td'); a.textContent = m.line.text; tr.appendChild(a);
+      const q = document.createElement('td'); q.className = 'num'; q.textContent = m.line.qty; tr.appendChild(q);
+      const c = document.createElement('td');
+      if (!m.cands.length) { const s = document.createElement('span'); s.className = 'pill bad'; s.textContent = 'לא נמצא'; c.appendChild(s); }
+      else if (m.mode === 'fresh') { c.textContent = 'הזול לפי ק״ג בכל רשת'; c.className = 'muted'; }
+      else {
+        const sel = document.createElement('select'); sel.setAttribute('aria-label', 'מוצר עבור ' + m.line.text);
+        m.cands.forEach((it,i) => { const op = document.createElement('option'); op.value = i; op.textContent = it[1] + (it[2] && it[2] !== '---' ? ' · ' + it[2] : ''); sel.appendChild(op); });
+        const op = document.createElement('option'); op.value = 'cheapest'; op.textContent = 'הזול ביותר בכל רשת (כל מוצר מתאים)'; sel.appendChild(op);
+        sel.value = String(m.chosen);
+        if (m.variety) { const v = document.createElement('div'); v.className = 'muted'; v.style.fontSize = '12px'; v.textContent = m.cands.length + ' סוגים נמצאו. ברירת המחדל: הזול בכל רשת. אפשר לבחור סוג מסוים.'; setTimeout(() => c.appendChild(v)); }
+        sel.addEventListener('change', () => { m.chosen = sel.value === 'cheapest' ? 'cheapest' : +sel.value; compute(); render(); });
+        c.appendChild(sel);
+      }
+      tr.appendChild(c);
+      const ps = act.map(s => linePrice(m, s.k));
+      const vals = ps.filter(Boolean).map(p => p.u);
+      const lo = vals.length ? Math.min(...vals) : null;
+      ps.forEach(p => { const td = document.createElement('td'); td.className = 'num'; if (p) { td.textContent = fmt(p.u); if (Math.abs(p.u - lo) < 1e-9 && vals.length > 1) td.className = 'num low'; } else { td.textContent = '—'; td.classList.add('muted'); } tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+  }
+
+  let LIST_TEXT = '';
+  function renderLists(){
+    const o = OPTIONS[SEL]; const box = $('#lists'); box.textContent = ''; const parts = [];
+    o.used.forEach(s => {
+      const rows = o.assign.get(s.id); const sum = rows.reduce((a,x) => a + x.p.total, 0);
+      const c = document.createElement('div'); c.className = 'card';
+      const h = document.createElement('strong'); h.textContent = s.name; c.appendChild(h);
+      const sub = document.createElement('div'); sub.className = 'muted'; sub.style.fontSize = '14px';
+      sub.textContent = rows.length + ' מוצרים · ' + fmt(sum) + ' ₪' + (s.fee ? ' + משלוח ' + fmt(s.fee) + ' ₪' : '');
+      c.appendChild(sub);
+      const ul = document.createElement('ul');
+      const txt = [s.name + ':'];
+      rows.forEach(x => { const li = document.createElement('li'); const line = (x.m.line.qty !== 1 ? x.m.line.qty + ' × ' : '') + x.p.it[1] + ' – ' + fmt(x.p.total) + ' ₪'; li.textContent = line; ul.appendChild(li); txt.push('• ' + line); });
+      c.appendChild(ul); box.appendChild(c); parts.push(txt.join('\n'));
+    });
+    LIST_TEXT = parts.join('\n\n');
+  }
+
+  $('#copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(LIST_TEXT); $('#copy').textContent = 'הועתק'; }
+    catch(e) { $('#copy').textContent = 'ההעתקה נחסמה'; }
+    setTimeout(() => $('#copy').textContent = 'העתק את הרשימות', 1800);
+  });
+
+  function run(){
+    if (!CAT.length) return;
+    MATCHES = parseList($('#list').value).map(match);
+    compute(); render();
+    const f = MATCHES.filter(m => m.cands.length).length;
+    $('#status').textContent = 'נמצאו ' + f + ' מתוך ' + MATCHES.length + ' שורות.';
+  }
+  $('#run').addEventListener('click', run);
+  chipsEl.addEventListener('change', () => { if (MATCHES.length) { compute(); render(); } });
+
+  fetch('catalog.json', {cache:'no-cache'}).then(r => r.json()).then(d => { CAT = d.items; STORES = d.stores.map(id => META[id]).filter(Boolean); buildChips(); $('#updated').textContent = d.updated; $('#status').textContent = 'המחירים נטענו (' + CAT.length.toLocaleString('he-IL') + ' מוצרים, ' + STORES.length + ' מקומות).'; run(); })
+    .catch(() => { $('#status').textContent = 'טעינת המחירים נכשלה. נסו לרענן את העמוד.'; });
+})();
+</script>
+</body>
+</html>
