@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>הסל הזול – צור הדסה</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -12,196 +12,295 @@
 <meta name="apple-mobile-web-app-title" content="הסל הזול">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Suez+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Suez+One&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* שוק בבוקר: ירוק עלים כהה, צהוב לימון לסימון החיסכון, נייר קר */
-  --bg:#f3f5f2; --panel:#ffffff; --ink:#1b2620; --muted:#5d6b63; --line:#d9e0db;
-  --accent:#17624b; --accent-ink:#ffffff; --hi:#f4c430; --hi-ink:#2a2200;
-  --ok:#1f7a4d; --warn:#9a6700; --bad:#b4232c;
-  --font-display:"Suez One", "Assistant", serif;
-  --font-body:"Assistant", "Segoe UI", Arial, sans-serif;
-  --r:10px;
-  /* פריסה: עמודת רשימה צרה בימין, תוצאות רחבות משמאל; עמודה אחת בטלפון */
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#111915; --panel:#18221d; --ink:#e7eee9; --muted:#9fb0a6; --line:#2b3a32;
-    --accent:#4fb38f; --accent-ink:#0b1712; --hi:#e8b923; --hi-ink:#1e1800;
-    --ok:#5cc58e; --warn:#e0a83a; --bad:#ef6b72; color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#111915; --panel:#18221d; --ink:#e7eee9; --muted:#9fb0a6; --line:#2b3a32;
-  --accent:#4fb38f; --accent-ink:#0b1712; --hi:#e8b923; --hi-ink:#1e1800;
-  --ok:#5cc58e; --warn:#e0a83a; --bad:#ef6b72; color-scheme:dark;
+  --bg:#f3f5f2; --panel:#ffffff; --ink:#1b2620; --muted:#5d6b63; --line:#d9e0db; --line2:#edf0ee;
+  --accent:#17624b; --accent-dark:#0f4535; --accent-soft:#e3f1ea; --on-accent:#ffffff; --sub-on-accent:#d6eadf;
+  --hi:#f4c430; --hi-ink:#2a2200; --hi-soft:#fff4cc; --hi-soft-ink:#4a3b00;
+  --bad:#9b2c22; --warn:#8a5a00; --wa:#1f8f4e;
+  --display:"Suez One","Assistant",serif; --body:"Assistant","Segoe UI",Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5}
-.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:18px}
-header h1{font-family:var(--font-display);font-weight:400;font-size:clamp(28px,4vw,40px);margin:0;text-wrap:balance}
-header p{margin:4px 0 0;color:var(--muted);max-width:65ch}
-.grid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:18px;align-items:start}
-@media (max-width:820px){.grid{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
-.card h2{font-size:18px;margin:0 0 4px;font-weight:700}
-.note{color:var(--muted);font-size:14px;margin:0 0 10px}
-textarea{width:100%;min-height:340px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--bg);color:var(--ink);font:inherit;line-height:1.6}
-textarea:focus,select:focus,button:focus-visible,input:focus-visible{outline:3px solid var(--hi);outline-offset:1px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button{font:inherit;font-weight:700;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 16px;cursor:pointer}
-button.ghost{background:transparent;color:var(--accent)}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:14px;background:var(--bg)}
-.chip input{accent-color:var(--accent)}
-.best{border:2px solid var(--accent);background:var(--panel)}
-.best .kicker{font-size:14px;color:var(--muted)}
-.best .name{font-family:var(--font-display);font-size:26px;line-height:1.2;margin:2px 0}
-.big{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
-.save{display:inline-block;background:var(--hi);color:var(--hi-ink);border-radius:6px;padding:2px 8px;font-weight:700}
-table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
-th,td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-th{color:var(--muted);font-weight:600;background:var(--panel);position:sticky;top:0}
-td.num{white-space:nowrap}
-td.low{color:var(--ok);font-weight:700}
-.scroll{overflow:auto;max-height:520px}
-.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600;border:1px solid currentColor}
-.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)} .pill.mut{color:var(--muted)}
-select{font:inherit;font-size:14px;max-width:100%;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);padding:3px 6px}
-.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
-.lists .card{background:var(--bg)}
-.lists ul{margin:6px 0 0;padding:0 18px 0 0}
+html,body{margin:0;height:100%}
+body{background:#dfe6e1;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.app{max-width:480px;min-height:100%;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;position:relative}
+[hidden]{display:none !important}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.view{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.bar{background:var(--accent);color:var(--on-accent);padding:16px 14px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:5}
+.bar h1{margin:0;font-family:var(--display);font-weight:400;font-size:24px;line-height:1.15}
+.bar .sub{font-size:13px;color:var(--sub-on-accent)}
+.bar .grow{flex:1;display:flex;flex-direction:column;min-width:0}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.bar .iconbtn:hover{background:rgba(255,255,255,.12)}
+.hero{background:var(--accent);color:var(--on-accent);padding:26px 20px 20px}
+.hero h1{margin:0;font-family:var(--display);font-weight:400;font-size:30px;line-height:1.2}
+.hero p{margin:6px 0 0;color:var(--sub-on-accent);font-size:15px}
+.body{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.foot{position:sticky;bottom:0;padding:12px 16px calc(16px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;z-index:4}
+.cta{display:flex;height:56px;border-radius:14px;background:var(--accent);color:var(--on-accent);border:0;align-items:center;justify-content:center;font-size:19px;font-weight:800;text-decoration:none;cursor:pointer;width:100%}
+.cta:disabled{opacity:.55;cursor:default}
+.cta.wa{background:var(--wa)}
+.ghostbtn{height:52px;border-radius:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-weight:700;font-size:17px;cursor:pointer;padding:0 16px}
+.link{background:none;border:0;color:var(--accent);font-weight:700;cursor:pointer;padding:6px 2px;font-size:15px}
+.card{background:var(--panel);border-radius:14px}
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec>h2{margin:0 2px;font-size:14px;color:var(--muted);font-weight:700}
+.rowi{display:flex;align-items:center;gap:12px;padding:11px 14px;min-height:52px;border-bottom:1px solid var(--line2)}
+.rowi:last-child{border-bottom:0}
+.rowi .t{flex:1;display:flex;flex-direction:column;min-width:0}
+.rowi .t b{font-size:16px;font-weight:600}
+.rowi .t small{font-size:13px;color:var(--muted)}
+.rowi input[type=checkbox],.rowi input[type=radio]{width:24px;height:24px;accent-color:var(--accent);margin:0;flex:none}
+label.rowi{cursor:pointer}
+.field{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700}
+.field input{height:48px;border:1px solid #c9d3cc;border-radius:12px;padding:0 12px;font-size:17px;background:#fff;min-width:0;font-weight:400}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:600;border:1px solid #c9d3cc;background:#fff;color:#2c3a32;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.mem{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-dark)}
+.chip.promo{background:var(--hi-soft);border-color:var(--hi);color:var(--hi-soft-ink);cursor:default}
+.chip.bad{background:#fbe9e7;border-color:var(--bad);color:var(--bad)}
+.chip.plain{cursor:default}
+.tag{display:inline-block;background:var(--hi-soft);border:1px solid var(--hi);color:var(--hi-soft-ink);border-radius:6px;padding:0 6px;font-size:12px;font-weight:700}
+.qty{display:inline-flex;align-items:center;border:1px solid #c9d3cc;border-radius:10px;overflow:hidden;flex:none}
+.qty button{width:38px;height:38px;border:0;background:var(--bg);font-size:20px;color:var(--accent);cursor:pointer}
+.qty span{min-width:30px;text-align:center;font-weight:700}
+.item{background:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.item .t{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.item .t b{font-size:17px}
+.item .chips{display:flex;gap:6px;flex-wrap:wrap}
+.del{width:32px;height:32px;border:0;background:none;color:var(--muted);border-radius:8px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+.search{display:flex;gap:8px}
+.search form{flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #c9d3cc;border-radius:12px;padding:0 6px 0 12px;height:50px}
+.search input{border:0;outline:0;font-size:16px;flex:1;background:transparent;min-width:0}
+.search .add{height:38px;border-radius:9px;border:0;background:var(--accent);color:#fff;font-weight:700;padding:0 12px;cursor:pointer}
+.sq{width:50px;height:50px;border-radius:12px;border:1px solid #c9d3cc;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);flex:none}
 .muted{color:var(--muted)}
-.foot{font-size:13px;color:var(--muted);max-width:90ch}
-#status{font-size:14px;color:var(--muted)}
-.banner{background:color-mix(in srgb, var(--hi) 30%, var(--panel));border:1px solid var(--hi);border-radius:var(--r);padding:10px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.banner[hidden]{display:none}
-button.wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
-.lists li label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
-.lists li input{margin-top:5px;accent-color:var(--accent)}
-.lists li input:checked + span{text-decoration:line-through;color:var(--muted)}
-.lists ul{list-style:none;padding:0}
-.saved{font-size:12px;color:var(--muted)}
+.small{font-size:13px}
+.best{background:#fff;border:2px solid var(--accent);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.best h2{margin:0;font-family:var(--display);font-weight:400;font-size:26px;line-height:1.2}
+.best .total{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.save{background:var(--hi);color:var(--hi-ink);border-radius:8px;padding:3px 10px;font-weight:800}
+.alt{background:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;border:2px solid transparent;cursor:pointer;width:100%;text-align:right}
+.alt.sel{border-color:var(--accent)}
+.alt .t{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.alt .p{display:flex;flex-direction:column;align-items:flex-start;flex:none}
+.alt .p b{font-size:17px;font-variant-numeric:tabular-nums}
+.diff{font-size:13px;color:var(--bad);font-weight:700}
+.note{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--accent-dark)}
+.tabs{display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto}
+.tabs button{height:40px;border-radius:999px;border:1px solid #c9d3cc;background:#fff;padding:0 14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.tabs button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.prog{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.prog div{height:8px;background:var(--accent);width:0}
+.srow{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:8px 12px;min-height:52px;cursor:pointer}
+.srow input{width:24px;height:24px;accent-color:var(--accent);margin:0;flex:none}
+.srow .n{flex:1;font-size:16px}
+.srow .pr{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.srow input:checked ~ .n,.srow input:checked ~ .pr{text-decoration:line-through;color:#6b7a72}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}
+.seg button{height:44px;border-radius:10px;border:1px solid #c9d3cc;background:#fff;font-weight:600;cursor:pointer}
+.seg button[aria-pressed=true]{border:2px solid var(--accent);background:var(--accent-soft);color:var(--accent-dark);font-weight:800}
+.sheetwrap{position:fixed;inset:0;background:rgba(15,30,22,.55);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:480px;max-height:88vh;overflow:auto;border-radius:22px 22px 0 0;padding:12px 18px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.sheet .grab{align-self:center;width:44px;height:5px;border-radius:3px;background:#c9d3cc}
+.sheet h2{margin:0;font-family:var(--display);font-weight:400;font-size:24px}
+.opt{display:flex;align-items:center;gap:12px;border:2px solid var(--line);border-radius:14px;padding:11px 14px;cursor:pointer}
+.opt.on{border-color:var(--accent)}
+.opt input{width:22px;height:22px;accent-color:var(--accent);margin:0;flex:none}
+.opt .t{flex:1;display:flex;flex-direction:column;min-width:0}
+.opt b{font-size:16px}
+.opt small{font-size:13px;color:var(--muted)}
+.sheet textarea{width:100%;min-height:220px;border:1px solid #c9d3cc;border-radius:12px;padding:10px;font-size:16px;background:var(--bg);resize:vertical}
+.btnrow{display:flex;gap:10px}
+.btnrow>*{flex:1}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:6px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.low{color:var(--accent);font-weight:800}
+.scrollx{overflow-x:auto}
+details{background:#fff;border-radius:14px;padding:10px 12px}
+summary{cursor:pointer;font-weight:700}
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:#1b2620;color:#fff;padding:10px 16px;border-radius:12px;z-index:30;font-size:15px;max-width:90vw}
+.banner{background:var(--hi-soft);border:1px solid var(--hi);border-radius:12px;padding:10px 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:14px}
+.scan{position:fixed;inset:0;background:#000;z-index:25;display:flex;flex-direction:column}
+.scan video{flex:1;width:100%;object-fit:cover}
+.scan .frame{position:absolute;left:12%;right:12%;top:38%;height:22%;border:3px solid var(--hi);border-radius:14px}
+.scan .foot{background:#000;border:0}
+.statusline{font-size:13px;color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>הסל הזול</h1>
-    <p>מדביקים רשימת קניות, והמחשבון בודק כל מוצר במחירים הרשמיים של הרשתות, כולל משלוח ומינימום הזמנה, וממליץ איפה הכי משתלם לקנות. המחירים מתעדכנים כל בוקר מקובצי השקיפות הרשמיים. עדכון אחרון: <span id="updated">—</span>.</p>
-  </header>
+<div class="app" id="app">
 
-  <div class="banner" id="shared-banner" hidden>
-    <span id="shared-text">נטענה רשימה ששותפה איתך.</span>
-    <button type="button" class="ghost" id="shared-undo">חזרה לרשימה הקודמת שלי</button>
+<!-- 0 · כתובת -->
+<section class="view" id="v-address" hidden aria-labelledby="addr-h">
+  <div class="hero">
+    <h1 id="addr-h">ברוכים הבאים להסל הזול</h1>
+    <p>לאן לשלוח? הכתובת קובעת אילו רשתות משלחות אליכם, כמה עולה המשלוח, ואילו סניפים קרובים.</p>
   </div>
-  <div class="banner" id="install-banner" hidden>
-    <span>אפשר להוסיף את הסל הזול למסך הבית ולפתוח אותו כמו אפליקציה.</span>
-    <button type="button" id="install-btn">הוספה למסך הבית</button>
+  <div class="body">
+    <label class="field">ישוב<input id="a-city" type="text" autocomplete="address-level2"></label>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+      <label class="field" style="grid-column:span 2">רחוב<input id="a-street" type="text" autocomplete="address-line1"></label>
+      <label class="field">מספר<input id="a-num" type="text" inputmode="numeric"></label>
+    </div>
+    <div class="sec"><h2>משלוח עד הבית לכתובת הזו</h2><div class="card" id="a-deliv"></div></div>
+    <div class="sec"><h2>סניפים קרובים לקנייה או איסוף</h2><div class="card" id="a-near"></div></div>
+    <p class="small muted" id="a-note"></p>
   </div>
+  <div class="foot"><button class="cta" id="a-go" type="button">המשך לרשימת הקניות</button></div>
+</section>
 
-  <div class="grid">
-    <section class="card" aria-labelledby="list-h">
-      <h2 id="list-h">רשימת הקניות</h2>
-      <p class="note">שורה לכל מוצר. כמות בתחילת השורה או בסופה ("2 חלב", "שמן 2"). כפילויות מתאחדות. הרשימה ובחירות המותגים נשמרות במכשיר הזה. <span class="saved" id="saved"></span></p>
-      <label for="list" class="muted" style="font-size:14px">הרשימה</label>
-      <textarea id="list" spellcheck="false"></textarea>
-      <div class="chips" id="store-chips" aria-label="רשתות לבדיקה"></div>
-      <div class="row" style="margin-top:12px">
-        <button id="run" type="button">חשב את הסל</button>
-        <button id="clear" type="button" class="ghost">נקה רשימה</button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="share" type="button" class="wa">שליחת הרשימה בווטסאפ</button>
-      </div>
-      <p class="note" style="margin-top:6px">הקישור שנשלח פותח את אותה רשימה, עם אותן בחירות מותג, אצל מי שמקבל אותו.</p>
-      <p id="status" aria-live="polite">טוען מחירים…</p>
-    </section>
-
-    <section style="display:flex;flex-direction:column;gap:18px;min-width:0">
-      <div class="card best" id="best">
-        <div class="kicker">ההמלצה</div>
-        <div class="name" id="best-name">—</div>
-        <div class="row"><span class="big" id="best-total">—</span><span id="best-save"></span></div>
-        <p class="note" id="best-why" style="margin-top:6px"></p>
-      </div>
-
-      <div class="card">
-        <h2>כל האפשרויות</h2>
-        <p class="note">רשת אחת או פיצול בין שתיים. כל מוצר נקנה במקום הזול מבין השניים, ולכל רשת במשלוח נוספים דמי משלוח.</p>
-        <div class="scroll" style="max-height:340px"><table id="opts"><thead><tr><th>אפשרות</th><th>מוצרים</th><th>משלוח</th><th>סה״כ</th><th>מצב</th></tr></thead><tbody></tbody></table></div>
-      </div>
-
-      <div class="card">
-        <h2>המוצרים שנמצאו</h2>
-        <p class="note">אפשר להחליף מוצר מהרשימה הנפתחת. ירקות, פירות ובשר מחושבים לפי ק״ג, במוצר הזול המתאים בכל רשת.</p>
-        <div class="scroll"><table id="items"><thead></thead><tbody></tbody></table></div>
-      </div>
-
-      <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <h2 style="margin:0">רשימת קניות לכל מקום</h2>
-          <div class="row"><button id="copy" type="button" class="ghost">העתק את הרשימות</button><button id="share-lists" type="button" class="wa">שליחה בווטסאפ</button></div>
-        </div>
-        <p class="note">לפי האפשרות שנבחרה. לחיצה על שורה בטבלת האפשרויות מחליפה אפשרות. בחנות אפשר לסמן כל מוצר שנכנס לעגלה.</p>
-        <div class="lists" id="lists"></div>
-      </div>
-    </section>
+<!-- 1 · רשימת הקניות -->
+<section class="view" id="v-list" hidden aria-labelledby="list-h">
+  <div class="bar">
+    <div class="grow"><h1 id="list-h">הסל הזול</h1><span class="sub" id="l-sub">טוען מחירים…</span></div>
+    <button class="iconbtn" id="l-share" type="button" aria-label="שליחת הרשימה בווטסאפ"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg></button>
+    <button class="iconbtn" id="l-settings" type="button" aria-label="הגדרות"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"></path></svg></button>
   </div>
+  <div class="body">
+    <div class="banner" id="shared-banner" hidden><span>נטענה רשימה ששותפה איתך.</span><button type="button" class="link" id="shared-undo">חזרה לרשימה הקודמת שלי</button></div>
+    <div class="banner" id="install-banner" hidden><span>אפשר להוסיף את הסל הזול למסך הבית ולפתוח אותו כמו אפליקציה.</span><button type="button" class="link" id="install-btn">הוספה למסך הבית</button></div>
+    <div class="search">
+      <form id="l-addform" role="search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5d6b63" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input id="l-add" type="text" placeholder="הוסיפו מוצר…" aria-label="הוספת מוצר" enterkeyhint="done" list="l-sugg" autocomplete="off">
+        <button class="add" type="submit">הוספה</button>
+      </form>
+      <button class="sq" id="l-scan" type="button" aria-label="סריקת ברקוד" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 8v8M11 8v8M14 8v8M17 8v8"></path></svg></button>
+    </div>
+    <datalist id="l-sugg"></datalist>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-paste">הדבקת רשימה מווטסאפ</button>
+      <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-fixed">הרשימה הקבועה שלנו</button>
+    </div>
+    <div class="statusline" id="l-count"></div>
+    <div id="l-items" style="display:flex;flex-direction:column;gap:8px"></div>
+    <p class="small muted" id="l-empty" hidden>הרשימה ריקה. הוסיפו מוצרים בשדה למעלה, או הדביקו רשימה מווטסאפ.</p>
+  </div>
+  <div class="foot"><button class="cta" id="l-go" type="button" disabled>מצאו לי את הסל הזול</button></div>
+</section>
 
-  <p class="foot">המקור: קובצי המחירים והמבצעים שהרשתות מפרסמות לפי חוק המזון. נכללים מבצעים פתוחים לכולם בכמות שבסל, ובשופרסל גם מבצעי מועדון (בלי קופונים, מתנות ומבצעים שמותנים בסכום קנייה). הסופר החברתי של ההסתדרות לא מפרסם קובצי מחירים, ולכן הוא לא בהשוואה. דמי משלוח ומינימום הזמנה לפי פרסומי הרשתות, ומינימום של 250 ₪ לשופרסל ולקרפור הוא הנחה. חצי חינם לא משלחת לצור הדסה ולכן לא נכללת. מחירי סניפים לפי הקובץ של אותו סניף. ויקטורי ומחסני השוק מופיעים רק בימים שהן מפרסמות קבצים. המחיר בקופה עשוי להשתנות. אב טיפוס לפיילוט משפחתי. הקוד: github.com/amidreamingstudio55/hasal-hazol</p>
+<!-- 2 · ההמלצה -->
+<section class="view" id="v-results" hidden aria-labelledby="res-h">
+  <div class="bar">
+    <button class="iconbtn" type="button" data-go="list" aria-label="חזרה לרשימה"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+    <div class="grow"><h1 id="res-h">ההמלצה</h1><span class="sub" id="r-sub"></span></div>
+  </div>
+  <div class="body">
+    <div class="best">
+      <span class="small muted" style="font-weight:600;font-size:14px" id="r-kicker">הכי משתלם לסל שלכם</span>
+      <h2 id="r-name">—</h2>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="total" id="r-total">—</span><span class="save" id="r-save" hidden></span></div>
+      <span class="small muted" style="font-size:14px" id="r-why"></span>
+      <button class="cta" id="r-go" type="button" style="height:52px;font-size:18px;margin-top:4px">לרשימת הקנייה</button>
+    </div>
+    <div class="note" id="r-note" hidden></div>
+    <h3 style="margin:4px 2px 0;font-size:16px">חלופות</h3>
+    <div id="r-alts" style="display:flex;flex-direction:column;gap:8px"></div>
+    <details><summary>פירוט מחירים לכל מוצר</summary><div class="scrollx" style="margin-top:8px"><table id="r-table"></table></div></details>
+    <p class="small muted" id="r-foot"></p>
+  </div>
+</section>
+
+<!-- 4 · בחנות -->
+<section class="view" id="v-store" hidden aria-labelledby="st-h">
+  <div class="bar">
+    <button class="iconbtn" type="button" data-go="results" aria-label="חזרה להמלצה"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+    <div class="grow"><h1 id="st-h">בחנות</h1><span class="sub" id="s-sub"></span></div>
+  </div>
+  <div class="tabs" id="s-tabs"></div>
+  <div style="padding:12px 16px 4px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span id="s-done"></span><span class="muted" id="s-left"></span></div>
+    <div class="prog"><div id="s-prog"></div></div>
+  </div>
+  <div class="body" id="s-list" style="gap:6px"></div>
+  <div class="foot" style="flex-direction:row;align-items:center;gap:10px">
+    <div style="flex:1;display:flex;flex-direction:column"><span class="small muted">סה״כ צפוי</span><strong style="font-size:24px;font-variant-numeric:tabular-nums" id="s-total"></strong></div>
+    <button class="cta wa" id="s-share" type="button" style="width:auto;height:52px;padding:0 18px;font-size:16px">שליחה בווטסאפ</button>
+  </div>
+</section>
+
+<!-- 5 · הגדרות -->
+<section class="view" id="v-settings" hidden aria-labelledby="set-h">
+  <div class="bar">
+    <button class="iconbtn" type="button" data-go="list" aria-label="חזרה לרשימה"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></button>
+    <div class="grow"><h1 id="set-h">הגדרות</h1><span class="sub">מה שחשוב למשפחה</span></div>
+  </div>
+  <div class="body">
+    <div class="sec"><h2>הבית</h2><div class="card"><div class="rowi"><span class="t"><b id="set-addr"></b><small>קובע מי משלח אליכם ואילו סניפים קרובים</small></span><button class="link" type="button" data-go="address">שינוי</button></div></div></div>
+    <div class="sec"><h2>מועדונים וחברויות</h2><div class="card">
+      <label class="rowi"><span class="t"><b>מועדון שופרסל</b><small>מחירי מועדון נכללים בחישוב</small></span><input type="checkbox" id="set-club"></label>
+      <div class="rowi"><span class="t"><b>חבר הסתדרות</b><small>הסופר החברתי לא מפרסם קובצי מחירים, ולכן עוד לא בהשוואה</small></span></div>
+    </div></div>
+    <div class="sec"><h2>כשרות</h2><div class="card">
+      <div class="seg" id="set-kosher"><button type="button" data-k="regular">רגילה</button><button type="button" data-k="mehadrin">מהדרין</button><button type="button" data-k="badatz">בד״ץ</button></div>
+      <p class="small muted" style="margin:0;padding:0 14px 10px">בקובצי המחירים אין שדה כשרות. בינתיים הבחירה נשמרת, והסינון יתווסף כשנמצא מקור אמין.</p>
+    </div></div>
+    <div class="sec"><h2>איך קונים</h2><div class="card" id="set-modes"></div></div>
+    <div class="sec"><h2>הרשימה</h2><div class="card">
+      <div class="rowi"><span class="t"><b>הרשימה הקבועה</b><small id="set-fixed-sub"></small></span><button class="link" type="button" id="set-fixed-save">שמירת הרשימה הנוכחית</button></div>
+      <div class="rowi"><span class="t"><b>בחירות מותג שנזכרו</b><small id="set-choices-sub"></small></span><button class="link" type="button" id="set-choices-clear">איפוס</button></div>
+    </div></div>
+    <p class="small muted">המקור: קובצי המחירים והמבצעים שהרשתות מפרסמות לפי חוק המזון. נכללים מבצעים פתוחים לכולם בכמות שבסל, ובשופרסל גם מבצעי מועדון (בלי קופונים ומבצעים שמותנים בסכום קנייה). מינימום הזמנה של 250 ₪ לשופרסל ולקרפור הוא הנחה. המחיר בקופה עשוי להשתנות. אב טיפוס לפיילוט משפחתי. הקוד: github.com/amidreamingstudio55/hasal-hazol</p>
+  </div>
+</section>
+
 </div>
 
 <script>
 (function(){
+  'use strict';
+  // ---------- stores ----------
   const META = {
-    SH:{id:'SH', name:'שופרסל אונליין (מועדון)', mode:'delivery', fee:35.9, min:250, ok:true},
-    CO:{id:'CO', name:'קרפור אונליין', mode:'delivery', fee:29.9, min:250, ok:true, note:'לא אומת שמשלחת לצור הדסה'},
-    CB:{id:'CB', name:'קרפור היפר בית שמש', mode:'store', fee:0, min:0, ok:true},
-    RL:{id:'RL', name:'רמי לוי ביתר עילית', mode:'store', fee:0, min:0, ok:true},
-    OA:{id:'OA', name:'אושר עד ביתר עילית', mode:'store', fee:0, min:0, ok:true},
-    YO:{id:'YO', name:'יוחננוף תלפיות', mode:'store', fee:0, min:0, ok:true},
-    KT:{id:'KT', name:'קשת טעמים גבעת רם', mode:'store', fee:0, min:0, ok:true},
-    MH:{id:'MH', name:'מחסני השוק צור הדסה', mode:'store', fee:0, min:0, ok:true},
-    VI:{id:'VI', name:'ויקטורי אונליין', mode:'delivery', fee:35.9, min:250, ok:true, note:'דמי משלוח הם הערכה'}
+    SH:{id:'SH', name:'שופרסל אונליין', mode:'delivery', fee:35.9, min:250, area:'delivery'},
+    CO:{id:'CO', name:'קרפור אונליין', mode:'delivery', fee:29.9, min:250, area:'delivery', note:'לא אומת שמשלחת לצור הדסה'},
+    VI:{id:'VI', name:'ויקטורי אונליין', mode:'delivery', fee:35.9, min:250, area:'delivery', note:'דמי המשלוח הם הערכה'},
+    CB:{id:'CB', name:'קרפור היפר בית שמש', mode:'store', fee:0, min:0, area:'bs'},
+    RL:{id:'RL', name:'רמי לוי ביתר עילית', mode:'store', fee:0, min:0, area:'beitar'},
+    OA:{id:'OA', name:'אושר עד ביתר עילית', mode:'store', fee:0, min:0, area:'beitar'},
+    YO:{id:'YO', name:'יוחננוף תלפיות', mode:'store', fee:0, min:0, area:'jlm'},
+    KT:{id:'KT', name:'קשת טעמים גבעת רם', mode:'store', fee:0, min:0, area:'jlm'},
+    MH:{id:'MH', name:'מחסני השוק צור הדסה', mode:'store', fee:0, min:0, area:'local'}
   };
-  let STORES = [];
+  const AREAS = [
+    {id:'delivery', label:'משלוח עד הבית', sub:'שופרסל אונליין, קרפור אונליין'},
+    {id:'local', label:'קנייה בצור הדסה', sub:'מחסני השוק, כשהיא מפרסמת מחירים'},
+    {id:'bs', label:'קנייה או איסוף בבית שמש', sub:'קרפור היפר'},
+    {id:'beitar', label:'קנייה בביתר עילית', sub:'רמי לוי, אושר עד'},
+    {id:'jlm', label:'קנייה בירושלים', sub:'יוחננוף תלפיות, קשת טעמים'}
+  ];
+  // what we checked for each town (only Tzur Hadassah so far)
+  const TOWNS = {
+    'צור הדסה': {
+      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לכאן'], ['no','חצי חינם','לא משלחת לצור הדסה']],
+      near: [['ok','מחסני השוק צור הדסה','בישוב'], ['ok','קרפור היפר בית שמש','קנייה בסניף'], ['ok','רמי לוי · אושר עד ביתר עילית','קנייה בסניף'], ['ok','יוחננוף · קשת טעמים ירושלים','קנייה בסניף']]
+    }
+  };
+  const SPLIT_MIN = 15;     // don't suggest two shops for less than this
+  const DELIV_PREF = 15;    // prefer home delivery when it costs at most this much more
+
   const SAMPLE = `קוטג'
 2 חלב דל לקטוז
-חלב רגיל
-חלב שיבולת
 גבינה צהובה
 גבינה בולגרית
 ביצים
 2 טונה בשמן
 2 שמן קנולה
-שמן זית
 רסק עגבניות
-עגבניות מרוסקות
-גרגרי חומוס
 פסטה
-פתיתים
-פירורי לחם
 טחינה
-מיונז
-קטשופ
-שוקולית
-פרינגלס
-עוגיות מרבה
 מלפפונים
 2 תפוחי אדמה
 בצל יבש
 אבוקדו
-חציל
-בטטה
-כרובית
 לימון
 2 עוף שלם
-שוקיים
 חזה עוף
-בשר טחון
-פרגיות`;
+בשר טחון`;
   const SYN = [
     [/^קל שמן|^תרסיס שמן|^ספריי שמן|^שמן בתרסיס/, '%תרסיס.*שמן|תרסיס פאם'],
     [/^קמח ללא גלוטן|^קמח נטול גלוטן|^קמח לאפייה ללא גלוטן/, '%^(קמח|מיקס|תערובת קמחים).*(ללא|נטול) גלוטן'],
@@ -232,94 +331,70 @@ button.wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
     [/^שעועית אדומה קפואה/, 'שעועית אדומה'],
     [/^שום קלוף/, 'שום קלוף']
   ];
-  const PRODUCE = ['אבוקדו','לימון','חציל','כרובית','בטטה','כרוב','גזר','פלפל','תפוח','תפוחים','דלעת','כרישה','פטרוזליה','כוסברה','כרפס','במיה','לוביה','רימון','תמרים','מנגולד','פטריות','חסה'];
+  const PRODUCE = ['אבוקדו','לימון','חציל','כרובית','בטטה','כרוב','גזר','פלפל','תפוח','תפוחים','דלעת','כרישה','פטרוזליה','כוסברה','כרפס','במיה','לוביה','רימון','תמרים','מנגולד','פטריות','חסה','בננה','אגס','קישוא','שמיר','נענע','ענבים','תפוז','קלמנטינה'];
+  const DEPTS = [
+    ['ירקות ופירות', m => m.mode === 'fresh' && !/עוף|בשר|טחון|שוקיים|פרגי|סלמון|דג/.test(m.line.text)],
+    ['בשר, עוף ודגים', m => /עוף|בשר|טחון|שוקיים|פרגי|סלמון|דג |דגים|שניצל|קבב|המבורגר/.test(m.line.text)],
+    ['מוצרי חלב וביצים', m => /חלב|גבינ|יוגורט|קוטג|ביצ|חמאה|שמנת|מוצרלה|בולגרית|צהובה|לבן|מעדן|שוקו/.test(m.line.text)],
+    ['לחם ומאפים', m => /לחם|פיתה|פיתות|לחמני|חלה|בגט|טורטיה/.test(m.line.text)],
+    ['ניקיון ונייר', m => /נייר|סבון|אקונומיקה|מרכך|אבקת כביסה|ג'ל כביסה|שקיות|ניקוי|מגבונים|טישו|רדיד|נר /.test(m.line.text)],
+    ['מזווה ושאר המוצרים', () => true]
+  ];
 
-  // ---- family: saved list, remembered brand choices, sharing ----
-  const LS = {get(k){ try { return localStorage.getItem('hasal:' + k); } catch(e) { return null; } },
-              set(k,v){ try { localStorage.setItem('hasal:' + k, v); return true; } catch(e) { return false; } }};
-  const keyOf = t => t.replace(/['״"׳`]/g,'').replace(/\s+/g,' ').trim();
-  let CHOICES = {};   // line key -> item code, or 'cheapest'
-  try { CHOICES = JSON.parse(LS.get('choices') || '{}') || {}; } catch(e) { CHOICES = {}; }
-  const saveChoices = () => LS.set('choices', JSON.stringify(CHOICES));
-  const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-  const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/'))));
-  function shareLink(){
-    const keys = new Set(parseList($('#list').value).map(l => keyOf(l.text)));
-    const c = {}; Object.keys(CHOICES).forEach(k => { if (keys.has(k)) c[k] = CHOICES[k]; });
-    return location.origin + location.pathname + '#l=' + b64e(JSON.stringify({t: $('#list').value, c}));
-  }
-  function openWhatsApp(text){ window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
-
-  let CAT = [];
+  // ---------- helpers ----------
   const $ = s => document.querySelector(s);
+  const el = (tag, attrs, ...kids) => { const e = document.createElement(tag); if (attrs) for (const [k,v] of Object.entries(attrs)) { if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v); } kids.flat().forEach(k => k != null && e.append(k)); return e; };
   const fmt = n => n.toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const idx = id => STORES.findIndex(s => s.id === id);
+  const LS = {get(k){ try { return localStorage.getItem('hasal:' + k); } catch(e) { return null; } },
+              set(k,v){ try { localStorage.setItem('hasal:' + k, v); return true; } catch(e) { return false; } },
+              json(k, d){ try { const v = JSON.parse(localStorage.getItem('hasal:' + k)); return v == null ? d : v; } catch(e) { return d; } }};
+  const keyOf = t => t.replace(/['״"׳`]/g,'').replace(/\s+/g,' ').trim();
+  function toast(msg){ const t = el('div', {class:'toast', role:'status', text: msg}); document.body.append(t); setTimeout(() => t.remove(), 2600); }
+  const ICON = {
+    ok: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17624b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="כן"><path d="M5 12l5 5 9-10"/></svg>',
+    no: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9b2c22" stroke-width="2.5" stroke-linecap="round" role="img" aria-label="לא"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    q:  '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8a5a00" stroke-width="2.2" stroke-linecap="round" role="img" aria-label="לבדיקה"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg>',
+    x:  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+  };
+  const iconEl = k => { const s = el('span', {style:'display:flex;flex:none'}); s.innerHTML = ICON[k]; return s; };
 
-  // chips
-  const chipsEl = $('#store-chips');
-  function buildChips(){ chipsEl.textContent = ''; STORES.forEach(s => {
-    const lab = document.createElement('label'); lab.className = 'chip';
-    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'st-' + s.id; cb.checked = s.ok; cb.disabled = !s.ok;
-    lab.appendChild(cb); lab.appendChild(document.createTextNode(s.name + (s.mode === 'store' ? ' (בחנות)' : ' (משלוח)')));
-    if (!s.ok) { lab.title = s.note; lab.style.opacity = .6; }
-    chipsEl.appendChild(lab);
-  }); }
-
-  // which list to show: a shared link, then the saved list, then the sample
-  (function initList(){
-    const m = location.hash.match(/^#l=([A-Za-z0-9_-]+)/);
-    if (m) {
-      try {
-        const d = JSON.parse(b64d(m[1]));
-        const prev = LS.get('list'), prevC = LS.get('choices');
-        if (prev != null) { LS.set('backup-list', prev); LS.set('backup-choices', prevC || '{}'); }
-        $('#list').value = d.t || '';
-        Object.assign(CHOICES, d.c || {}); saveChoices(); LS.set('list', $('#list').value);
-        $('#shared-banner').hidden = false;
-        $('#shared-undo').hidden = prev == null;
-        history.replaceState(null, '', location.pathname);
-        return;
-      } catch(e) { /* broken link: fall through */ }
-    }
-    const saved = LS.get('list');
-    $('#list').value = saved != null ? saved : SAMPLE;
-  })();
-  window.addEventListener('hashchange', () => { if (/^#l=/.test(location.hash)) location.reload(); });
-  $('#shared-undo').addEventListener('click', () => {
-    $('#list').value = LS.get('backup-list') || '';
-    try { CHOICES = JSON.parse(LS.get('backup-choices') || '{}'); } catch(e) { CHOICES = {}; }
-    saveChoices(); LS.set('list', $('#list').value); $('#shared-banner').hidden = true; run();
-  });
-  let saveT;
-  $('#list').addEventListener('input', () => { clearTimeout(saveT); saveT = setTimeout(() => { if (LS.set('list', $('#list').value)) $('#saved').textContent = 'נשמר.'; }, 400); });
-  $('#clear').addEventListener('click', () => { $('#list').value = ''; LS.set('list', ''); $('#list').focus(); });
-  $('#share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));
+  // ---------- state ----------
+  let SET = Object.assign({city:'צור הדסה', street:'', num:'', club:true, kosher:'regular', areas:{delivery:true, local:true, bs:true, beitar:true, jlm:true}}, LS.json('settings', {}));
+  const saveSet = () => LS.set('settings', JSON.stringify(SET));
+  let CHOICES = LS.json('choices', {});
+  const saveChoices = () => LS.set('choices', JSON.stringify(CHOICES));
+  let LIST = [];  // [{text, qty}]
+  let CAT = [], STORES = [], UPDATED = '', REPORT = {};
+  let MATCHES = [], OPTIONS = [], REC = null, SEL = null, NOTE = '';
+  let dirty = true;
 
   function parseList(text){
     const seen = new Map();
     text.split(/\n/).forEach(raw => {
-      let l = raw.replace(/\[[ xX]?\]/g,'').replace(/\(.*?\)/g,'').replace(/\s+/g,' ').trim();
+      let l = raw.replace(/\[[ xX]?\]/g,'').replace(/\(.*?\)/g,'').replace(/^[\s•\-–*·]+/,'').replace(/\s+/g,' ').trim();
       if (!l) return;
       let q = 1, m;
       if ((m = l.match(/^(.*?)\s*[×xX*]\s*(\d+(?:\.\d+)?)\s*$/))) { q = +m[2]; l = m[1].trim(); }
       else if ((m = l.match(/^(\d+(?:\.\d+)?)\s*[×xX*]\s*(.+)$/))) { q = +m[1]; l = m[2].trim(); }
-      else       if ((m = l.match(/^(\d+(?:\.\d+)?)\s+(.+)$/))) { q = +m[1]; l = m[2]; }
+      else if ((m = l.match(/^(\d+(?:\.\d+)?)\s+(.+)$/))) { q = +m[1]; l = m[2]; }
       else if ((m = l.match(/^(.+?)\s+(\d+(?:\.\d+)?)$/))) { q = +m[2]; l = m[1]; }
-      const key = l.replace(/['״"׳`]/g,'');
-      if (!seen.has(key)) seen.set(key, {text:l, qty:q});
+      const key = keyOf(l);
+      if (seen.has(key)) seen.get(key).qty += q; else seen.set(key, {text:l, qty:q});
     });
     return [...seen.values()];
   }
+  const listText = () => LIST.map(x => (x.qty !== 1 ? x.qty + ' ' : '') + x.text).join('\n');
+  function saveList(){ LS.set('list', listText()); dirty = true; }
 
+  // ---------- matching (same rules as before) ----------
   function queryFor(text){
     const t = text.replace(/['׳`]/g,'');
     for (const [re, q] of SYN) if (re.test(t)) return q;
     if (PRODUCE.some(p => t.startsWith(p))) return '~' + t.split(' ')[0].replace(/ים$|ות$/, '');
     return t;
   }
-
-  const hasPrice = (it, k) => it[4][k] > 0;
-  const unit = (it, k, qty) => { const p = it[4][k]; if (!(p > 0)) return null; const pr = it[5][k]; return (pr && qty >= pr[0]) ? pr[1] : p; };
+  const unit = (it, k, qty) => { const p = it[4][k]; if (!(p > 0)) return null; const pr = it[5][k]; return (pr && qty >= pr[0] && (SET.club || !pr[2])) ? pr[1] : p; };
+  const promoAt = (it, k, qty) => { const pr = it[5][k]; return !!(pr && qty >= pr[0] && (SET.club || !pr[2]) && it[4][k] > 0); };
 
   function match(line){
     const q = queryFor(line.text);
@@ -333,52 +408,47 @@ button.wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
       let cands = CAT.filter(it => re.test(it[1]) && !/עוגה|בראוני|נאצ|אטריות|חטיף/.test(it[1]));
       const lowest = it => Math.min(...it[4].filter(p => p > 0));
       cands.sort((a,b) => (b[4].filter(p => p > 0).length - a[4].filter(p => p > 0).length) || (lowest(a) - lowest(b)));
-      cands = cands.slice(0, 20);
-      return remember({line, mode:'pack', cands, chosen: cands.length ? 'cheapest' : -1, variety: true});
+      return remember({line, mode:'pack', cands: cands.slice(0, 20), chosen: cands.length ? 'cheapest' : -1, variety: true});
     }
     const toks = q.split(/\s+/).filter(Boolean);
     let cands = CAT.filter(it => toks.every(tk => it[1].includes(tk)));
     cands.forEach(it => {
-      const n = it[4].filter(p => p > 0).length;
       const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
       const med = ps[Math.floor(ps.length/2)] || 1e9;
-      it._s = n * 100 + (it[1].startsWith(toks[0]) ? 300 : 0) - med * 0.5;
+      it._s = ps.length * 100 + (it[1].startsWith(toks[0]) ? 300 : 0) - med * 0.5;
     });
     cands.sort((a,b) => b._s - a._s);
-    cands = cands.slice(0, 12);
-    return remember({line, mode:'pack', cands, chosen: cands.length ? 0 : -1});
+    return remember({line, mode:'pack', cands: cands.slice(0, 12), chosen: cands.length ? 0 : -1});
   }
-
-  // apply a brand choice remembered for this line (on this device or from a shared link)
   function remember(m){
     const c = CHOICES[keyOf(m.line.text)];
     if (!c || !m.cands.length) return m;
-    if (c === 'cheapest') { m.chosen = 'cheapest'; return m; }
+    if (c === 'cheapest') { m.chosen = 'cheapest'; m.remembered = true; return m; }
     let i = m.cands.findIndex(it => it[0] === c);
     if (i < 0) { const it = CAT.find(x => x[0] === c); if (it) { m.cands.unshift(it); i = 0; } }
-    if (i >= 0) m.chosen = i;
+    if (i >= 0) { m.chosen = i; m.remembered = true; }
     return m;
   }
-
-  // price of a matched line at store k (per line total), and the item used
   function linePrice(m, k){
     const qty = m.line.qty;
     if (m.mode === 'fresh' || m.chosen === 'cheapest') {
       let best = null;
       for (const it of m.cands) { const u = unit(it, k, qty); if (u != null && (best == null || u < best.u)) best = {u, it}; }
-      return best ? {total: best.u * qty, it: best.it, u: best.u} : null;
+      return best ? {total: best.u * qty, it: best.it, u: best.u, promo: promoAt(best.it, k, qty)} : null;
     }
     const it = m.cands[m.chosen]; if (!it) return null;
-    const u = unit(it, k, qty); return u == null ? null : {total: u * qty, it, u};
+    const u = unit(it, k, qty); return u == null ? null : {total: u * qty, it, u, promo: promoAt(it, k, qty)};
+  }
+  function ensureMatches(){
+    if (!dirty || !CAT.length) return;
+    MATCHES = LIST.map(match); dirty = false;
   }
 
-  let MATCHES = [], OPTIONS = [], SEL = 0;
-
-  function active(){ return STORES.map((s,k) => ({...s, k})).filter(s => s.ok && $('#st-' + s.id).checked); }
-
+  // ---------- optimizer ----------
+  const active = () => STORES.map((s,k) => ({...s, k})).filter(s => SET.areas[s.area] !== false);
   function compute(){
-    const act = active();
-    const found = MATCHES.filter(m => m.cands.length);
+    ensureMatches();
+    const act = active(), found = MATCHES.filter(m => m.cands.length);
     const subsets = [];
     act.forEach((a,i) => { subsets.push([a]); act.slice(i+1).forEach(b => subsets.push([a,b])); });
     OPTIONS = subsets.map(sub => {
@@ -386,143 +456,367 @@ button.wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
       let total = 0, missing = 0;
       found.forEach(m => {
         let best = null;
-        sub.forEach(s => { const p = linePrice(m, s.k); if (p && (best == null || p.total < best.p.total - 1e-9 || (Math.abs(p.total-best.p.total)<1e-9 && s.mode==='delivery'))) best = {s, p}; });
+        sub.forEach(s => { const p = linePrice(m, s.k); if (p && (best == null || p.total < best.p.total - 1e-9 || (Math.abs(p.total-best.p.total) < 1e-9 && s.mode === 'delivery'))) best = {s, p}; });
         if (!best) { missing++; return; }
         total += best.p.total; assign.get(best.s.id).push({m, p: best.p});
       });
-      const fees = sub.reduce((a,s) => a + (assign.get(s.id).length ? s.fee : 0), 0);
       const used = sub.filter(s => assign.get(s.id).length);
+      const fees = used.reduce((a,s) => a + s.fee, 0);
       const minOk = used.every(s => s.mode !== 'delivery' || assign.get(s.id).reduce((a,x) => a + x.p.total, 0) >= s.min);
-      const trips = used.filter(s => s.mode === 'store').length;
-      return {sub, used, assign, products: total, fees, total: total + fees, missing, minOk, trips};
-    }).filter(o => o.used.length === o.sub.length);
+      return {id: sub.map(s => s.id).join('+'), sub, used, assign, products: total, fees, total: total + fees, missing, minOk};
+    }).filter(o => o.used.length === o.sub.length && o.used.length);
     OPTIONS.sort((a,b) => (a.missing - b.missing) || ((b.minOk?1:0) - (a.minOk?1:0)) || (a.total - b.total));
-    SEL = 0;
+    // recommendation rules: one shop unless splitting really pays; delivery if it costs only a little more
+    NOTE = ''; REC = OPTIONS[0] || null;
+    if (!REC) return;
+    const sameMiss = o => o.missing === REC.missing && o.minOk;
+    const singles = OPTIONS.filter(o => o.used.length === 1 && sameMiss(o));
+    const bestSingle = singles[0];
+    const bestSplit = OPTIONS.find(o => o.used.length === 2 && sameMiss(o));
+    if (REC.used.length === 2 && bestSingle) {
+      const gain = bestSingle.total - REC.total;
+      if (gain < SPLIT_MIN) { REC = bestSingle; NOTE = 'פיצול בין שתי רשתות חוסך רק ' + fmt(Math.max(gain,0)) + ' ₪, ולכן לא מוצע.'; }
+      else NOTE = 'הפיצול בין שתי הרשתות חוסך ' + fmt(gain) + ' ₪ לעומת קנייה במקום אחד (' + bestSingle.used[0].name + ').';
+    } else if (bestSplit && REC.used.length === 1) {
+      const gain = REC.total - bestSplit.total;
+      if (gain >= 0) NOTE = 'פיצול בין שתי רשתות היה חוסך רק ' + fmt(gain) + ' ₪, ולכן לא מוצע.';
+    }
+    if (REC.used.length === 1 && REC.used[0].mode === 'store') {
+      const del = singles.find(o => o.used[0].mode === 'delivery');
+      if (del && del.total - REC.total <= DELIV_PREF) { NOTE = 'משלוח עד הבית עולה רק ' + fmt(del.total - REC.total) + ' ₪ יותר מנסיעה לסניף, ולכן הוא מומלץ.'; REC = del; }
+    }
+  }
+  const optName = o => o.used.map(s => s.name).join(' + ');
+  function optMode(o){
+    if (o.used.length === 2) return o.used.map(s => s.mode === 'store' ? 'סניף' : 'משלוח').join(' + ') + (o.fees ? ' · כולל ' + fmt(o.fees) + ' ₪ משלוח' : '');
+    const s = o.used[0];
+    return s.mode === 'store' ? 'קנייה בסניף' : 'משלוח עד הבית · כולל ' + fmt(s.fee) + ' ₪ משלוח';
   }
 
-  function optName(o){ return o.used.map(s => s.name).join(' + '); }
-
-  function render(){
-    const tb = $('#opts tbody'); tb.textContent = '';
-    if (!OPTIONS.length) { $('#best-name').textContent = 'אין תוצאות'; return; }
-    const single = OPTIONS.filter(o => o.used.length === 1 && !o.missing && o.minOk);
-    const bestDel = single.filter(o => o.used[0].mode === 'delivery').sort((a,b)=>a.total-b.total)[0];
-    OPTIONS.forEach((o,i) => {
-      const tr = document.createElement('tr'); tr.style.cursor = 'pointer'; tr.tabIndex = 0;
-      if (i === SEL) tr.style.background = 'color-mix(in srgb, var(--hi) 22%, transparent)';
-      const cells = [optName(o), fmt(o.products), fmt(o.fees), fmt(o.total)];
-      cells.forEach((c,j) => { const td = document.createElement('td'); td.textContent = c; if (j) td.className = 'num'; tr.appendChild(td); });
-      const td = document.createElement('td'); const pill = document.createElement('span');
-      if (o.missing) { pill.className = 'pill bad'; pill.textContent = 'חסרים ' + o.missing; }
-      else if (!o.minOk) { pill.className = 'pill warn'; pill.textContent = 'מתחת למינימום'; }
-      else if (o.trips > 1) { pill.className = 'pill warn'; pill.textContent = '2 נסיעות'; }
-      else if (o.used.some(s => s.mode === 'store')) { pill.className = 'pill mut'; pill.textContent = o.used.length > 1 ? 'משלוח + נסיעה' : 'נסיעה לסניף'; }
-      else { pill.className = 'pill ok'; pill.textContent = 'משלוח'; }
-      td.appendChild(pill); tr.appendChild(td);
-      const pick = () => { SEL = i; render(); };
-      tr.addEventListener('click', pick); tr.addEventListener('keydown', e => { if (e.key === 'Enter') pick(); });
-      tb.appendChild(tr);
-    });
-    const o = OPTIONS[SEL];
-    $('#best-name').textContent = optName(o);
-    $('#best-total').textContent = fmt(o.total) + ' ₪';
-    const worst = single.length ? Math.max(...single.map(x => x.total)) : null;
-    const saveEl = $('#best-save'); saveEl.textContent = '';
-    if (worst && worst - o.total > 0.5) { const s = document.createElement('span'); s.className = 'save'; s.textContent = 'חוסך ' + fmt(worst - o.total) + ' ₪ מול היקר'; saveEl.appendChild(s); }
-    const why = [];
-    why.push(o.used.map(s => s.mode === 'store' ? s.name + ': קנייה בסניף' : s.name + ': משלוח ' + fmt(s.fee) + ' ₪').join(' · '));
-    if (bestDel && bestDel !== o) why.push('הזול במשלוח עד הבית: ' + optName(bestDel) + ', ' + fmt(bestDel.total) + ' ₪.');
-    const nf = MATCHES.filter(m => !m.cands.length).length;
-    if (nf) why.push(nf + ' שורות לא נמצאו ואינן בחישוב.');
-    $('#best-why').textContent = why.join(' ');
-    renderItems(); renderLists();
+  // ---------- navigation ----------
+  const VIEWS = ['address','list','results','store','settings'];
+  function go(v, push = true){
+    VIEWS.forEach(x => { $('#v-' + x).hidden = x !== v; });
+    ({address: renderAddress, list: renderList, results: renderResults, store: renderStore, settings: renderSettings})[v]();
+    window.scrollTo(0, 0);
+    if (push) history.pushState({v}, '', location.pathname);
   }
+  window.addEventListener('popstate', e => go((e.state && e.state.v) || 'list', false));
+  document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
 
-  function renderItems(){
-    const act = active();
-    const th = $('#items thead'); th.textContent = '';
-    const hr = document.createElement('tr');
-    ['מהרשימה','כמות','המוצר'].concat(act.map(s => s.name)).forEach(t => { const x = document.createElement('th'); x.textContent = t; hr.appendChild(x); });
-    th.appendChild(hr);
-    const tb = $('#items tbody'); tb.textContent = '';
-    MATCHES.forEach(m => {
-      const tr = document.createElement('tr');
-      const a = document.createElement('td'); a.textContent = m.line.text; tr.appendChild(a);
-      const q = document.createElement('td'); q.className = 'num'; q.textContent = m.line.qty; tr.appendChild(q);
-      const c = document.createElement('td');
-      if (!m.cands.length) { const s = document.createElement('span'); s.className = 'pill bad'; s.textContent = 'לא נמצא'; c.appendChild(s); }
-      else if (m.mode === 'fresh') { c.textContent = 'הזול לפי ק״ג בכל רשת'; c.className = 'muted'; }
-      else {
-        const sel = document.createElement('select'); sel.setAttribute('aria-label', 'מוצר עבור ' + m.line.text);
-        m.cands.forEach((it,i) => { const op = document.createElement('option'); op.value = i; op.textContent = it[1] + (it[2] && it[2] !== '---' ? ' · ' + it[2] : ''); sel.appendChild(op); });
-        const op = document.createElement('option'); op.value = 'cheapest'; op.textContent = 'הזול ביותר בכל רשת (כל מוצר מתאים)'; sel.appendChild(op);
-        sel.value = String(m.chosen);
-        if (m.variety) { const v = document.createElement('div'); v.className = 'muted'; v.style.fontSize = '12px'; v.textContent = m.cands.length + ' סוגים נמצאו. ברירת המחדל: הזול בכל רשת. אפשר לבחור סוג מסוים.'; setTimeout(() => c.appendChild(v)); }
-        sel.addEventListener('change', () => {
-          m.chosen = sel.value === 'cheapest' ? 'cheapest' : +sel.value;
-          CHOICES[keyOf(m.line.text)] = m.chosen === 'cheapest' ? 'cheapest' : m.cands[m.chosen][0]; saveChoices();
-          compute(); render();
-        });
-        c.appendChild(sel);
-      }
-      tr.appendChild(c);
-      const ps = act.map(s => linePrice(m, s.k));
-      const vals = ps.filter(Boolean).map(p => p.u);
-      const lo = vals.length ? Math.min(...vals) : null;
-      ps.forEach(p => { const td = document.createElement('td'); td.className = 'num'; if (p) { td.textContent = fmt(p.u); if (Math.abs(p.u - lo) < 1e-9 && vals.length > 1) td.className = 'num low'; } else { td.textContent = '—'; td.classList.add('muted'); } tr.appendChild(td); });
-      tb.appendChild(tr);
-    });
+  // ---------- 0 · address ----------
+  function renderAddress(){
+    $('#a-city').value = SET.city; $('#a-street').value = SET.street; $('#a-num').value = SET.num;
+    renderTown();
   }
-
-  let LIST_TEXT = '';
-  function renderLists(){
-    const o = OPTIONS[SEL]; const box = $('#lists'); box.textContent = ''; const parts = [];
-    o.used.forEach(s => {
-      const rows = o.assign.get(s.id); const sum = rows.reduce((a,x) => a + x.p.total, 0);
-      const c = document.createElement('div'); c.className = 'card';
-      const h = document.createElement('strong'); h.textContent = s.name; c.appendChild(h);
-      const sub = document.createElement('div'); sub.className = 'muted'; sub.style.fontSize = '14px';
-      sub.textContent = rows.length + ' מוצרים · ' + fmt(sum) + ' ₪' + (s.fee ? ' + משלוח ' + fmt(s.fee) + ' ₪' : '');
-      c.appendChild(sub);
-      const ul = document.createElement('ul');
-      const txt = [s.name + ':'];
-      rows.forEach(x => {
-        const li = document.createElement('li'); const line = (x.m.line.qty !== 1 ? x.m.line.qty + ' × ' : '') + x.p.it[1] + ' – ' + fmt(x.p.total) + ' ₪';
-        const lab = document.createElement('label'); const cb = document.createElement('input'); cb.type = 'checkbox';
-        const sp = document.createElement('span'); sp.textContent = line; lab.appendChild(cb); lab.appendChild(sp); li.appendChild(lab);
-        ul.appendChild(li); txt.push('• ' + line);
-      });
-      c.appendChild(ul); box.appendChild(c); parts.push(txt.join('\n'));
-    });
-    LIST_TEXT = parts.join('\n\n');
+  function renderTown(){
+    const town = TOWNS[$('#a-city').value.trim()];
+    const d = $('#a-deliv'), n = $('#a-near'); d.textContent = ''; n.textContent = '';
+    const row = ([k, name, sub]) => el('div', {class:'rowi'}, iconEl(k), el('span', {class:'t'}, el('b', {text:name}), el('small', {text:sub})));
+    if (town) { town.deliv.forEach(r => d.append(row(r))); town.near.forEach(r => n.append(row(r))); $('#a-note').textContent = ''; }
+    else { d.append(row(['q','עוד לא בדקנו את הישוב הזה','ההשוואה כרגע מותאמת לצור הדסה ולסביבה'])); n.append(row(['q','סניפים קרובים','נוסיף כשנרחיב לישובים נוספים'])); $('#a-note').textContent = 'אפשר להמשיך, אבל המשלוחים והסניפים יחושבו כמו בצור הדסה.'; }
   }
-
-  $('#copy').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(LIST_TEXT); $('#copy').textContent = 'הועתק'; }
-    catch(e) { $('#copy').textContent = 'ההעתקה נחסמה'; }
-    setTimeout(() => $('#copy').textContent = 'העתק את הרשימות', 1800);
+  $('#a-city').addEventListener('input', renderTown);
+  $('#a-go').addEventListener('click', () => {
+    SET.city = $('#a-city').value.trim() || 'צור הדסה'; SET.street = $('#a-street').value.trim(); SET.num = $('#a-num').value.trim();
+    saveSet(); LS.set('onboarded', '1'); go('list');
   });
 
-  $('#share-lists').addEventListener('click', () => { if (LIST_TEXT) openWhatsApp('הסל הזול – מה קונים ואיפה:\n\n' + LIST_TEXT); });
+  // ---------- 1 · list ----------
+  function chipFor(m){
+    if (!CAT.length) return [];
+    if (!m.cands.length) return [el('button', {type:'button', class:'chip bad', text:'לא נמצא · לתקן שם', onclick: () => openSheet(m)})];
+    if (m.mode === 'fresh') return [el('span', {class:'chip plain', text:'לפי ק״ג · הזול בכל רשת'})];
+    const out = [];
+    let txt, cls = 'chip';
+    if (m.chosen === 'cheapest') { txt = m.variety ? 'הכי זול · ' + m.cands.length + ' סוגים' : 'הכי זול בכל רשת'; if (m.remembered) cls += ' mem'; }
+    else { const it = m.cands[m.chosen]; txt = shortName(it[1]) + (m.remembered ? ' · נזכר' : ''); if (m.remembered) cls += ' mem'; }
+    out.push(el('button', {type:'button', class: cls, text: txt, onclick: () => openSheet(m), 'aria-label': 'בחירת מוצר: ' + txt}));
+    if (STORES.some((s,k) => { const p = linePrice(m, k); return p && p.promo; })) out.push(el('span', {class:'chip promo', text:'מבצע'}));
+    return out;
+  }
+  const shortName = n => n.length > 26 ? n.slice(0, 25) + '…' : n;
+  function renderList(){
+    ensureMatches();
+    const box = $('#l-items'); box.textContent = '';
+    LIST.forEach((x, i) => {
+      const m = MATCHES[i] && MATCHES[i].line === x ? MATCHES[i] : {line:x, cands:[], mode:'pack'};
+      const minus = el('button', {type:'button', 'aria-label':'הפחתה', text:'−', onclick: () => { if (x.qty > 1) { x.qty = Math.max(1, +(x.qty - 1).toFixed(2)); saveList(); renderList(); } }});
+      const plus = el('button', {type:'button', 'aria-label':'הוספה', text:'+', onclick: () => { x.qty = +(x.qty + 1).toFixed(2); saveList(); renderList(); }});
+      const del = el('button', {type:'button', class:'del', 'aria-label':'מחיקת ' + x.text, onclick: () => { LIST.splice(i, 1); saveList(); renderList(); }}); del.innerHTML = ICON.x;
+      box.append(el('div', {class:'item'},
+        el('div', {class:'t'}, el('b', {text:x.text}), el('div', {class:'chips'}, chipFor(m))),
+        el('div', {class:'qty'}, minus, el('span', {text: String(x.qty)}), plus), del));
+    });
+    $('#l-empty').hidden = LIST.length > 0;
+    const nf = CAT.length ? MATCHES.filter(m => !m.cands.length).length : 0;
+    $('#l-count').textContent = LIST.length ? LIST.length + ' מוצרים' + (nf ? ' · ' + nf + ' לא נמצאו' : '') : '';
+    $('#l-go').disabled = !CAT.length || !LIST.length;
+    $('#l-sub').textContent = CAT.length ? SET.city + ' · מחירים מ־' + UPDATED : 'טוען מחירים…';
+  }
+  function addLine(text, code){
+    const parsed = parseList(text); if (!parsed.length) return;
+    parsed.forEach(p => { const ex = LIST.find(x => keyOf(x.text) === keyOf(p.text)); if (ex) ex.qty += p.qty; else LIST.push(p); if (code) { CHOICES[keyOf(p.text)] = code; saveChoices(); } });
+    saveList(); renderList();
+  }
+  $('#l-addform').addEventListener('submit', e => { e.preventDefault(); const v = $('#l-add').value.trim(); if (!v) return; addLine(v); $('#l-add').value = ''; $('#l-add').focus(); });
+  // light suggestions from the catalog
+  let suggT;
+  $('#l-add').addEventListener('input', () => { clearTimeout(suggT); suggT = setTimeout(() => {
+    const v = $('#l-add').value.trim(), dl = $('#l-sugg'); dl.textContent = '';
+    if (v.length < 2 || !CAT.length) return;
+    const seen = new Set();
+    for (const it of CAT) { if (it[1].startsWith(v) || it[1].includes(' ' + v)) { const n = it[1].split(' ').slice(0, 3).join(' '); if (!seen.has(n)) { seen.add(n); dl.append(el('option', {value:n})); if (seen.size >= 8) break; } } }
+  }, 200); });
+  $('#l-go').addEventListener('click', () => { compute(); SEL = REC; go('results'); });
+  $('#l-settings').addEventListener('click', () => go('settings'));
+  $('#l-share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));
+  $('#l-paste').addEventListener('click', openPaste);
+  $('#l-fixed').addEventListener('click', () => {
+    const f = LS.get('fixed');
+    if (f == null) { toast('עוד אין רשימה קבועה. שומרים אותה בהגדרות.'); return; }
+    const before = LIST.length; addLine(f); toast('נוספו מוצרים מהרשימה הקבועה' + (before ? '' : '.'));
+  });
 
-  // install as an app (Android/desktop Chrome); iPhone: Share > Add to Home Screen
+  // ---------- sheets ----------
+  let sheetEl = null;
+  function closeSheet(){ if (sheetEl) { sheetEl.remove(); sheetEl = null; } }
+  function showSheet(label, ...kids){
+    closeSheet();
+    const sh = el('div', {class:'sheet', role:'dialog', 'aria-modal':'true', 'aria-label': label}, el('div', {class:'grab'}), ...kids);
+    sheetEl = el('div', {class:'sheetwrap', onclick: e => { if (e.target === sheetEl) closeSheet(); }}, sh);
+    document.body.append(sheetEl);
+    const f = sh.querySelector('input,textarea,button'); if (f) f.focus();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+  function cheapestAt(it, qty){
+    let best = null; active().forEach(s => { const u = unit(it, s.k, qty); if (u != null && (!best || u < best.u)) best = {u, s}; });
+    return best;
+  }
+  function openSheet(m){
+    const key = keyOf(m.line.text);
+    const nameIn = el('input', {type:'text', value: m.line.text, 'aria-label':'שם המוצר ברשימה', style:'height:46px;border:1px solid #c9d3cc;border-radius:12px;padding:0 12px;font-size:16px'});
+    let pick = m.chosen;
+    const opts = el('div', {style:'display:flex;flex-direction:column;gap:8px'});
+    const drawOpts = () => {
+      opts.textContent = '';
+      const mk = (val, title, sub) => {
+        const on = String(pick) === String(val);
+        const r = el('input', {type:'radio', name:'brandpick', checked: on, onchange: () => { pick = val; drawOpts(); }});
+        return el('label', {class:'opt' + (on ? ' on' : '')}, r, el('span', {class:'t'}, el('b', {text:title}), sub ? el('small', {text:sub}) : null));
+      };
+      if (m.cands.length) {
+        opts.append(mk('cheapest', 'הכי זול בכל רשת', m.variety ? 'כל אחד מ־' + m.cands.length + ' הסוגים שנמצאו, הזול בכל סופר' : 'כל מוצר מתאים, הזול בכל סופר'));
+        m.cands.forEach((it, i) => { const c = cheapestAt(it, m.line.qty); opts.append(mk(i, it[1] + (it[2] && it[2] !== '---' && it[2].length > 1 ? ' · ' + it[2] : ''), c ? 'החל מ־' + fmt(c.u) + ' ₪ ב' + c.s.name : 'לא נמכר ברשתות שבחרתם')); });
+      } else opts.append(el('p', {class:'small muted', style:'margin:0', text:'לא מצאנו מוצר בשם הזה במחירונים. נסו שם קצר או כללי יותר, למשל "טונה" במקום שם מלא של מותג.'}));
+    };
+    drawOpts();
+    const rem = el('input', {type:'checkbox', checked: true, style:'width:22px;height:22px;accent-color:#17624b;margin:0'});
+    const save = el('button', {type:'button', class:'cta', style:'height:52px;font-size:18px', text:'שמירה', onclick: () => {
+      const newName = nameIn.value.trim();
+      if (newName && newName !== m.line.text) {
+        const x = LIST.find(l => l === m.line); if (x) { x.text = newName; delete CHOICES[key]; saveChoices(); }
+      } else if (m.cands.length && pick !== -1) {
+        if (rem.checked) { CHOICES[key] = pick === 'cheapest' ? 'cheapest' : m.cands[pick][0]; saveChoices(); }
+        else { delete CHOICES[key]; saveChoices(); }
+        if (!rem.checked) { m.chosen = pick; m.remembered = false; closeSheet(); saveList(); dirty = false; MATCHES = MATCHES.map(x => x === m ? m : x); renderList(); return; }
+      }
+      closeSheet(); saveList(); renderList();
+    }});
+    showSheet('בחירת מוצר עבור ' + m.line.text,
+      el('div', {style:'display:flex;flex-direction:column;gap:2px'}, el('span', {class:'small muted', style:'font-weight:600', text:'איזה מוצר לקנות?'}), el('h2', {text: m.line.text + (m.line.qty !== 1 ? ' × ' + m.line.qty : '')})),
+      el('label', {class:'field', style:'font-weight:600'}, 'שם המוצר ברשימה', nameIn),
+      opts,
+      m.cands.length ? el('label', {style:'display:flex;align-items:center;gap:10px;font-size:15px;padding:4px 2px'}, rem, 'לזכור את הבחירה לפעם הבאה') : null,
+      el('div', {class:'btnrow'}, save, el('button', {type:'button', class:'ghostbtn', text:'ביטול', onclick: closeSheet})));
+  }
+  function openPaste(){
+    const ta = el('textarea', {'aria-label':'הרשימה להדבקה', placeholder:'הדביקו כאן את הרשימה. שורה לכל מוצר, אפשר עם כמות: "2 חלב" או "שמן ×2".'});
+    showSheet('הדבקת רשימה',
+      el('h2', {text:'הדבקת רשימה'}), ta,
+      el('div', {class:'btnrow'},
+        el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'הוספה לרשימה', onclick: () => { addLine(ta.value); closeSheet(); }}),
+        el('button', {type:'button', class:'ghostbtn', text:'החלפת הרשימה', onclick: () => { LIST = []; addLine(ta.value); closeSheet(); }})));
+  }
+
+  // ---------- 2 · results ----------
+  function renderResults(){
+    if (!OPTIONS.length) compute();
+    const found = MATCHES.filter(m => m.cands.length).length;
+    $('#r-sub').textContent = MATCHES.length + ' מוצרים · ' + found + ' נמצאו';
+    if (!REC) { $('#r-name').textContent = 'אין תוצאות'; $('#r-total').textContent = ''; $('#r-why').textContent = 'בחרו בהגדרות לפחות דרך קנייה אחת.'; $('#r-alts').textContent = ''; $('#r-go').hidden = true; return; }
+    $('#r-go').hidden = false;
+    const o = SEL || REC, isRec = o === REC;
+    $('#r-kicker').textContent = isRec ? 'הכי משתלם לסל שלכם' : 'האפשרות שבחרתם';
+    $('#r-name').textContent = optName(o);
+    $('#r-total').textContent = fmt(o.total) + ' ₪';
+    const complete = OPTIONS.filter(x => x.used.length === 1 && x.missing === o.missing && x.minOk);
+    const worst = complete.length ? complete.reduce((a,b) => b.total > a.total ? b : a) : null;
+    const save = $('#r-save');
+    if (worst && worst.total - o.total > 0.5) { save.hidden = false; save.textContent = 'חוסך ' + fmt(worst.total - o.total) + ' ₪'; } else save.hidden = true;
+    const why = [optMode(o)];
+    if (worst && worst !== o && worst.total - o.total > 0.5) why.push('לעומת ' + worst.used[0].name + ', האפשרות היקרה');
+    if (o.missing) why.push(o.missing + ' מוצרים לא נמצאו ואינם בחישוב');
+    if (!o.minOk) why.push('מתחת למינימום ההזמנה');
+    $('#r-why').textContent = why.join(' · ');
+    $('#r-note').hidden = !(NOTE && isRec); $('#r-note').textContent = NOTE;
+    // alternatives
+    const box = $('#r-alts'); box.textContent = '';
+    const list = [REC, ...OPTIONS.filter(x => x !== REC && x.minOk)].slice(0, 7);
+    list.forEach(x => {
+      const d = x.total - REC.total;
+      const extra = [];
+      if (x === REC) extra.push(el('span', {class:'small', style:'color:#17624b;font-weight:800', text:'ההמלצה'}));
+      if (x.missing) extra.push(el('span', {class:'small', style:'color:#9b2c22;font-weight:700', text:'חסרים ' + x.missing}));
+      if (!x.minOk) extra.push(el('span', {class:'small', style:'color:#8a5a00;font-weight:700', text:'מתחת למינימום הזמנה'}));
+      box.append(el('button', {type:'button', class:'alt' + (x === o ? ' sel' : ''), 'aria-pressed': x === o ? 'true' : 'false', onclick: () => { SEL = x; renderResults(); }},
+        el('span', {class:'t'}, el('b', {style:'font-size:16px', text: optName(x)}), el('span', {class:'small muted', text: optMode(x)}), ...extra),
+        el('span', {class:'p'}, el('b', {text: fmt(x.total) + ' ₪'}), x === REC ? null : el('span', {class:'diff', text: (d >= 0 ? '+' : '−') + fmt(Math.abs(d))}))));
+    });
+    renderTable();
+    $('#r-foot').textContent = 'מחירים מקובצי השקיפות של הרשתות · עודכן ' + UPDATED + ' · המחיר בקופה עשוי להשתנות';
+  }
+  function renderTable(){
+    const act = active(), t = $('#r-table'); t.textContent = '';
+    t.append(el('thead', null, el('tr', null, el('th', {text:'מוצר'}), act.map(s => el('th', {text: s.name})))));
+    const tb = el('tbody');
+    MATCHES.forEach(m => {
+      const ps = act.map(s => linePrice(m, s.k)); const vals = ps.filter(Boolean).map(p => p.u); const lo = vals.length ? Math.min(...vals) : null;
+      tb.append(el('tr', null, el('td', {text: m.line.text + (m.line.qty !== 1 ? ' ×' + m.line.qty : '')}),
+        ps.map(p => el('td', {class: p && vals.length > 1 && Math.abs(p.u - lo) < 1e-9 ? 'low' : '', text: p ? fmt(p.u) + (p.promo ? '*' : '') : '—'}))));
+    });
+    t.append(tb);
+  }
+  $('#r-go').addEventListener('click', () => { STORE_TAB = 0; go('store'); });
+
+  // ---------- 4 · in the store ----------
+  let STORE_TAB = 0;
+  const checksKey = o => 'checks:' + o.id;
+  function renderStore(){
+    const o = SEL || REC; if (!o) return go('results');
+    const checks = LS.json(checksKey(o), {});
+    const tabs = $('#s-tabs'); tabs.textContent = ''; tabs.hidden = o.used.length < 2;
+    o.used.forEach((s, i) => tabs.append(el('button', {type:'button', 'aria-pressed': i === STORE_TAB ? 'true' : 'false', text: s.name, onclick: () => { STORE_TAB = i; renderStore(); }})));
+    const s = o.used[Math.min(STORE_TAB, o.used.length - 1)];
+    const rows = o.assign.get(s.id);
+    $('#s-sub').textContent = s.name + (s.mode === 'delivery' ? ' · משלוח' : '');
+    const box = $('#s-list'); box.textContent = '';
+    let done = 0, left = 0;
+    const groups = DEPTS.map(([name]) => ({name, rows: []}));
+    rows.forEach(r => { const gi = DEPTS.findIndex(([, f]) => f(r.m)); groups[gi].rows.push(r); });
+    groups.filter(g => g.rows.length).forEach(g => {
+      box.append(el('h3', {style:'margin:8px 2px 2px;font-size:14px;color:#5d6b63', text: g.name}));
+      g.rows.forEach(r => {
+        const k = keyOf(r.m.line.text), on = !!checks[k];
+        if (on) done++; else left += r.p.total;
+        const cb = el('input', {type:'checkbox', checked: on, onchange: () => { checks[k] = cb.checked; LS.set(checksKey(o), JSON.stringify(checks)); renderStore(); }});
+        const name = (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1];
+        box.append(el('label', {class:'srow'}, cb, el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})));
+      });
+    });
+    const missing = MATCHES.filter(m => !m.cands.length);
+    if (missing.length && STORE_TAB === 0) box.append(el('p', {class:'small muted', text:'לא נמצאו במחירונים: ' + missing.map(m => m.line.text).join(', ')}));
+    $('#s-done').textContent = done + ' מתוך ' + rows.length + ' בעגלה';
+    $('#s-left').textContent = 'נשאר ' + fmt(left) + ' ₪';
+    $('#s-prog').style.width = (rows.length ? Math.round(done / rows.length * 100) : 0) + '%';
+    const sum = rows.reduce((a,r) => a + r.p.total, 0) + s.fee;
+    $('#s-total').textContent = fmt(sum) + ' ₪';
+  }
+  $('#s-share').addEventListener('click', () => {
+    const o = SEL || REC; if (!o) return;
+    const parts = o.used.map(s => { const rows = o.assign.get(s.id); return s.name + ':\n' + rows.map(r => '• ' + (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1] + ' – ' + fmt(r.p.total) + ' ₪').join('\n'); });
+    openWhatsApp('הסל הזול – מה קונים ואיפה (' + fmt(o.total) + ' ₪):\n\n' + parts.join('\n\n'));
+  });
+
+  // ---------- 5 · settings ----------
+  function renderSettings(){
+    $('#set-addr').textContent = (SET.street ? SET.street + (SET.num ? ' ' + SET.num : '') + ', ' : '') + SET.city;
+    $('#set-club').checked = SET.club;
+    document.querySelectorAll('#set-kosher button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === SET.kosher ? 'true' : 'false'));
+    const box = $('#set-modes'); box.textContent = '';
+    AREAS.forEach(a => {
+      const has = STORES.some(s => s.area === a.id);
+      const cb = el('input', {type:'checkbox', checked: SET.areas[a.id] !== false, onchange: () => { SET.areas[a.id] = cb.checked; saveSet(); OPTIONS = []; }});
+      box.append(el('label', {class:'rowi'}, el('span', {class:'t'}, el('b', {text:a.label}), el('small', {text: has ? a.sub : a.sub + ' · אין מחירים היום'})), cb));
+    });
+    const f = LS.get('fixed');
+    $('#set-fixed-sub').textContent = f == null ? 'עוד לא נשמרה' : parseList(f).length + ' מוצרים · נטענת בכפתור במסך הרשימה';
+    $('#set-choices-sub').textContent = Object.keys(CHOICES).length + ' מוצרים';
+  }
+  $('#set-club').addEventListener('change', e => { SET.club = e.target.checked; saveSet(); OPTIONS = []; dirty = true; });
+  $('#set-kosher').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.kosher = b.dataset.k; saveSet(); renderSettings(); });
+  $('#set-fixed-save').addEventListener('click', () => { LS.set('fixed', listText()); renderSettings(); toast('הרשימה הנוכחית נשמרה כרשימה הקבועה.'); });
+  $('#set-choices-clear').addEventListener('click', () => { CHOICES = {}; saveChoices(); dirty = true; renderSettings(); toast('בחירות המותג אופסו.'); });
+
+  // ---------- sharing ----------
+  const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/'))));
+  function shareLink(){
+    const keys = new Set(LIST.map(l => keyOf(l.text)));
+    const c = {}; Object.keys(CHOICES).forEach(k => { if (keys.has(k)) c[k] = CHOICES[k]; });
+    return location.origin + location.pathname + '#l=' + b64e(JSON.stringify({t: listText(), c}));
+  }
+  function openWhatsApp(text){ window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+  window.addEventListener('hashchange', () => { if (/^#l=/.test(location.hash)) location.reload(); });
+  $('#shared-undo').addEventListener('click', () => {
+    LIST = parseList(LS.get('backup-list') || '');
+    CHOICES = LS.json('backup-choices', {}); saveChoices(); saveList(); $('#shared-banner').hidden = true; renderList();
+  });
+
+  // ---------- barcode (Android Chrome) ----------
+  if ('BarcodeDetector' in window && navigator.mediaDevices) $('#l-scan').hidden = false;
+  $('#l-scan').addEventListener('click', async () => {
+    let stream, stop = false, det;
+    try { det = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']}); stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); }
+    catch(e) { toast('אין גישה למצלמה.'); return; }
+    const video = el('video', {playsinline:true, muted:true, autoplay:true}); video.srcObject = stream;
+    const close = () => { stop = true; stream.getTracks().forEach(t => t.stop()); wrap.remove(); };
+    const wrap = el('div', {class:'scan', role:'dialog', 'aria-label':'סריקת ברקוד'}, video, el('div', {class:'frame', 'aria-hidden':'true'}),
+      el('div', {class:'foot'}, el('button', {type:'button', class:'ghostbtn', style:'color:#fff;border-color:#fff', text:'ביטול', onclick: close})));
+    document.body.append(wrap);
+    const tick = async () => {
+      if (stop) return;
+      try { const r = await det.detect(video); if (r.length) { const code = r[0].rawValue.replace(/^0+/, ''); const it = CAT.find(x => x[0].replace(/^0+/, '') === code);
+        close(); if (it) { addLine(it[1].split(' ').slice(0, 4).join(' '), it[0]); toast('נוסף: ' + it[1]); } else toast('הברקוד ' + code + ' לא נמצא במחירונים.'); return; } } catch(e) {}
+      setTimeout(tick, 250);
+    };
+    video.addEventListener('playing', tick, {once:true});
+  });
+
+  // ---------- install as an app ----------
   let installEvt = null;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#install-banner').hidden = false; });
   $('#install-btn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#install-banner').hidden = true; });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-  function run(){
-    if (!CAT.length) return;
-    MATCHES = parseList($('#list').value).map(match);
-    compute(); render();
-    const f = MATCHES.filter(m => m.cands.length).length;
-    $('#status').textContent = 'נמצאו ' + f + ' מתוך ' + MATCHES.length + ' שורות.';
-  }
-  $('#run').addEventListener('click', run);
-  chipsEl.addEventListener('change', () => { if (MATCHES.length) { compute(); render(); } });
+  // ---------- start ----------
+  (function initList(){
+    const m = location.hash.match(/^#l=([A-Za-z0-9_-]+)/);
+    if (m) {
+      try {
+        const d = JSON.parse(b64d(m[1]));
+        const prev = LS.get('list');
+        if (prev != null) { LS.set('backup-list', prev); LS.set('backup-choices', LS.get('choices') || '{}'); }
+        LIST = parseList(d.t || ''); Object.assign(CHOICES, d.c || {}); saveChoices(); saveList();
+        $('#shared-banner').hidden = false; $('#shared-undo').hidden = prev == null;
+        history.replaceState(null, '', location.pathname);
+        return;
+      } catch(e) {}
+    }
+    const saved = LS.get('list');
+    LIST = parseList(saved != null ? saved : SAMPLE);
+  })();
+  const first = LS.get('onboarded') ? 'list' : 'address';
+  history.replaceState({v:first}, '', location.pathname);
+  go(first, false);
 
-  fetch('catalog.json', {cache:'no-cache'}).then(r => r.json()).then(d => { CAT = d.items; STORES = d.stores.map(id => META[id]).filter(Boolean); buildChips(); $('#updated').textContent = d.updated; $('#status').textContent = 'המחירים נטענו (' + CAT.length.toLocaleString('he-IL') + ' מוצרים, ' + STORES.length + ' מקומות).'; run(); })
-    .catch(() => { $('#status').textContent = 'טעינת המחירים נכשלה. נסו לרענן את העמוד.'; });
+  fetch('catalog.json', {cache:'no-cache'}).then(r => r.json()).then(d => {
+    CAT = d.items; UPDATED = d.updated; REPORT = d.report || {};
+    STORES = d.stores.map(id => META[id]).filter(Boolean);
+    dirty = true; OPTIONS = [];
+    const v = VIEWS.find(x => !$('#v-' + x).hidden);
+    if (v === 'list') renderList(); else if (v === 'settings') renderSettings();
+  }).catch(() => { $('#l-sub').textContent = 'טעינת המחירים נכשלה. נסו לרענן.'; });
 })();
 </script>
 </body>

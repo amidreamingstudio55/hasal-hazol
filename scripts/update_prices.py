@@ -253,7 +253,7 @@ def main():
                     continue
                 u = dp / (mq or 1)
                 if price * 0.3 < u < price * 0.98 and (best is None or u < best[1]):
-                    best = (round(mq or 1, 2), round(u, 3))
+                    best = (round(mq or 1, 2), round(u, 3), 1 if club else 0)  # 1 = club-only (the site can switch it off)
             prices.append(round(price, 2)); promos.append(list(best) if best else 0)
         items.append([c, re.sub(r'\s+', ' ', max(names, key=len)).strip(), (src['mfr'] or '').strip()[:20], w, prices, promos])
     os.makedirs(OUT, exist_ok=True)
