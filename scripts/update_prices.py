@@ -278,6 +278,34 @@ def build(P, R, ok):
     return items
 
 
+def load_previous(sid):
+    """Rebuild a chain's prices from the last published catalog (for a chain that failed today)."""
+    for cfg in REGIONS.values():
+        fn = os.path.join(OUT, cfg['file'])
+        if not os.path.exists(fn):
+            continue
+        try:
+            with open(fn, encoding='utf-8') as f:
+                d = json.load(f)
+            if sid not in d['stores']:
+                continue
+            when = datetime.datetime.strptime(d['updated'], '%Y-%m-%d %H:%M')
+            if NOW - when > datetime.timedelta(days=LOCAL_MAX_DAYS):
+                continue
+            k = d['stores'].index(sid); P, R = {}, {}
+            for code, name, mfr, w, prices, promos in d['items']:
+                if prices[k] > 0:
+                    P[code] = {'name': name, 'mfr': mfr, 'w': str(w), 'price': prices[k]}
+                    pr = promos[k]
+                    if pr:
+                        R[code] = [(pr[0], pr[0] * pr[1], bool(pr[2]) if len(pr) > 2 else False, '')]
+            if P:
+                return d['updated'], P, R
+        except Exception:
+            continue
+    return None
+
+
 def main():
     P, R, report = {}, {}, {}
     for sid, kind, p, meta in STORES:
@@ -305,6 +333,12 @@ def main():
                 P[sid] = d['P']; R[sid] = {c: [tuple(x) for x in v] for c, v in d['R'].items()}
                 report[sid] += f' -> local copy from {d["date"]} ({len(P[sid])} items)'
                 print(' ', sid, 'using local copy from', d['date'], flush=True)
+        if sid not in P:
+            prev = load_previous(sid)
+            if prev:
+                P[sid], R[sid] = prev[1], prev[2]
+                report[sid] += f' -> previous catalog from {prev[0]} ({len(P[sid])} items)'
+                print(' ', sid, 'using previous catalog from', prev[0], flush=True)
     print(json.dumps(report, ensure_ascii=False, indent=1))
     meta_of = {sid: dict(meta, id=sid) for sid, kind, p, meta in STORES}
     written = 0
