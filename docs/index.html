@@ -460,17 +460,17 @@ summary{cursor:pointer;font-weight:700}
     act.forEach((a,i) => { subsets.push([a]); act.slice(i+1).forEach(b => subsets.push([a,b])); });
     OPTIONS = subsets.map(sub => {
       const assign = new Map(sub.map(s => [s.id, []]));
-      let total = 0, missing = 0;
+      let total = 0, missing = 0; const miss = [];
       found.forEach(m => {
         let best = null;
         sub.forEach(s => { const p = linePrice(m, s.k); if (p && (best == null || p.total < best.p.total - 1e-9 || (Math.abs(p.total-best.p.total) < 1e-9 && s.mode === 'delivery'))) best = {s, p}; });
-        if (!best) { missing++; return; }
+        if (!best) { missing++; miss.push(m.line.text); return; }
         total += best.p.total; assign.get(best.s.id).push({m, p: best.p});
       });
       const used = sub.filter(s => assign.get(s.id).length);
       const fees = used.reduce((a,s) => a + s.fee, 0);
       const minOk = used.every(s => s.mode !== 'delivery' || assign.get(s.id).reduce((a,x) => a + x.p.total, 0) >= s.min);
-      return {id: sub.map(s => s.id).join('+'), sub, used, assign, products: total, fees, total: total + fees, missing, minOk};
+      return {id: sub.map(s => s.id).join('+'), sub, used, assign, products: total, fees, total: total + fees, missing, miss, minOk};
     }).filter(o => o.used.length === o.sub.length && o.used.length);
     OPTIONS.sort((a,b) => (a.missing - b.missing) || ((b.minOk?1:0) - (a.minOk?1:0)) || (a.total - b.total));
     // recommendation rules: one shop unless splitting really pays; delivery if it costs only a little more
@@ -491,6 +491,12 @@ summary{cursor:pointer;font-weight:700}
     if (REC.used.length === 1 && REC.used[0].mode === 'store') {
       const del = singles.find(o => o.used[0].mode === 'delivery');
       if (del && del.total - REC.total <= DELIV_PREF) { NOTE = 'משלוח עד הבית עולה רק ' + fmt(del.total - REC.total) + ' ₪ יותר מנסיעה לסניף, ולכן הוא מומלץ.'; REC = del; }
+    }
+    // a single shop that lacks only one or two items can beat a split: say so
+    const near = OPTIONS.filter(o => o.used.length === 1 && o.minOk && o.missing > REC.missing && o.missing - REC.missing <= 2 && o.total < REC.total).sort((a,b) => a.total - b.total)[0];
+    if (near && REC.used.length === 2) {
+      const lack = near.miss.filter(t => !REC.miss.includes(t));
+      NOTE += (NOTE ? ' ' : '') + 'אפשר גם רק ב' + near.used[0].name + ': ' + fmt(near.total) + ' ₪, אבל אין שם ' + lack.join(', ') + '.';
     }
   }
   const optName = o => o.used.map(s => s.name).join(' + ');
