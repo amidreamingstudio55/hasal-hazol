@@ -99,6 +99,7 @@ label.rowi{cursor:pointer}
 .srow input{width:24px;height:24px;accent-color:var(--accent);margin:0;flex:none}
 .srow .n{flex:1;font-size:16px}
 .srow .pr{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.golink{flex:none;display:flex;align-items:center;justify-content:center;min-width:44px;height:40px;border-radius:10px;border:1px solid var(--accent);color:var(--accent);font-weight:700;font-size:13px;text-decoration:none;padding:0 8px}
 .srow input:checked ~ .n,.srow input:checked ~ .pr{text-decoration:line-through;color:#6b7a72}
 .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:10px}
 .seg button{height:44px;border-radius:10px;border:1px solid #c9d3cc;background:#fff;font-weight:600;cursor:pointer}
@@ -288,6 +289,12 @@ summary{cursor:pointer;font-weight:700}
       near: [['ok','מחסני השוק צור הדסה','בישוב'], ['ok','קרפור היפר בית שמש','קנייה בסניף'], ['ok','רמי לוי · אושר עד ביתר עילית','קנייה בסניף'], ['ok','יוחננוף · קשת טעמים ירושלים','קנייה בסניף']]
     }
   };
+  // where each online store's own site can open a product (search by barcode; by name for produce without one)
+  const SHOP_LINK = {
+    SH: q => 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q)
+  };
+  const isBarcode = c => /^\d{8,14}$/.test(c) && !/^0+$/.test(c);
+  const shopQuery = it => isBarcode(it[0]) ? it[0] : it[1];
   const SPLIT_MIN = 15;     // don't suggest two shops for less than this
   const DELIV_PREF = 15;    // prefer home delivery when it costs at most this much more
 
@@ -730,9 +737,20 @@ summary{cursor:pointer;font-weight:700}
         if (on) done++; else left += r.p.total;
         const cb = el('input', {type:'checkbox', checked: on, onchange: () => { checks[k] = cb.checked; LS.set(checksKey(o), JSON.stringify(checks)); renderStore(); }});
         const name = (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1];
-        box.append(el('label', {class:'srow'}, cb, el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})));
+        const link = SHOP_LINK[s.id] ? el('a', {class:'golink', href: SHOP_LINK[s.id](shopQuery(r.p.it)), target:'_blank', rel:'noopener', 'aria-label':'פתיחה באתר ' + s.name + ': ' + r.p.it[1], text:'לאתר'}) : null;
+        box.append(el('div', {style:'display:flex;gap:6px;align-items:center'},
+          el('label', {class:'srow', style:'flex:1;min-width:0'}, cb, el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})), link));
       });
     });
+    if (SHOP_LINK[s.id]) {
+      box.prepend(el('div', {class:'note'},
+        el('div', {text:'הזמנה ב' + s.name + ': לחצו "לאתר" ליד כל מוצר, או העתיקו את רשימת ההזמנה ושלחו אותה ל־Claude, שימלא את העגלה בחשבון שלכם ויעצור לפני התשלום.'}),
+        el('button', {type:'button', class:'link', text:'העתקת רשימת ההזמנה למילוי עגלה', onclick: () => {
+          const lines = rows.map(r => shopQuery(r.p.it) + ' | ' + r.m.line.qty + ' | ' + r.p.it[1]);
+          const txt = 'מילוי עגלה ב' + s.name + ' – הסל הזול (ברקוד | כמות | מוצר):\n' + lines.join('\n');
+          (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('הרשימה הועתקה. הדביקו אותה בשיחה עם Claude.'), () => { prompt('העתיקו את הרשימה:', txt); });
+        }})));
+    }
     const missing = MATCHES.filter(m => !m.cands.length);
     if (missing.length && STORE_TAB === 0) box.append(el('p', {class:'small muted', text:'לא נמצאו במחירונים: ' + missing.map(m => m.line.text).join(', ')}));
     $('#s-done').textContent = done + ' מתוך ' + rows.length + ' בעגלה';
