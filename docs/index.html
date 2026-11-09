@@ -202,6 +202,7 @@ summary{cursor:pointer;font-weight:700}
       <button class="cta" id="r-go" type="button" style="height:52px;font-size:18px;margin-top:4px">לרשימת הקנייה</button>
     </div>
     <div class="note" id="r-note" hidden></div>
+    <div class="note" id="r-social" hidden></div>
     <h3 style="margin:4px 2px 0;font-size:16px">חלופות</h3>
     <div id="r-alts" style="display:flex;flex-direction:column;gap:8px"></div>
     <details><summary>פירוט מחירים לכל מוצר</summary><div class="scrollx" style="margin-top:8px"><table id="r-table"></table></div></details>
@@ -237,7 +238,7 @@ summary{cursor:pointer;font-weight:700}
     <div class="sec"><h2>הבית</h2><div class="card"><div class="rowi"><span class="t"><b id="set-addr"></b><small>קובע מי משלח אליכם ואילו סניפים קרובים</small></span><button class="link" type="button" data-go="address">שינוי</button></div></div></div>
     <div class="sec"><h2>מועדונים וחברויות</h2><div class="card">
       <label class="rowi"><span class="t"><b>מועדון שופרסל</b><small>מחירי מועדון נכללים בחישוב</small></span><input type="checkbox" id="set-club"></label>
-      <div class="rowi"><span class="t"><b>חבר הסתדרות</b><small>הסופר החברתי לא מפרסם קובצי מחירים, ולכן עוד לא בהשוואה</small></span></div>
+      <label class="rowi"><span class="t"><b>חבר/ת הסתדרות</b><small id="set-hist-sub">מציג חיסכון ממזווה חודשי בסופר החברתי (מוצרים יבשים בלבד)</small></span><input type="checkbox" id="set-hist"></label>
     </div></div>
     <div class="sec"><h2>כשרות</h2><div class="card">
       <div class="seg" id="set-kosher"><button type="button" data-k="regular">רגילה</button><button type="button" data-k="mehadrin">מהדרין</button><button type="button" data-k="badatz">בד״ץ</button></div>
@@ -384,12 +385,12 @@ summary{cursor:pointer;font-weight:700}
   const iconEl = k => { const s = el('span', {style:'display:flex;flex:none'}); s.innerHTML = ICON[k]; return s; };
 
   // ---------- state ----------
-  let SET = Object.assign({city:'צור הדסה', street:'', num:'', club:true, kosher:'regular', areas:{delivery:true, local:true, bs:true, beitar:true, jlm:true}}, LS.json('settings', {}));
+  let SET = Object.assign({city:'צור הדסה', street:'', num:'', club:true, hist:false, kosher:'regular', areas:{delivery:true, local:true, bs:true, beitar:true, jlm:true}}, LS.json('settings', {}));
   const saveSet = () => LS.set('settings', JSON.stringify(SET));
   let CHOICES = LS.json('choices', {});
   const saveChoices = () => LS.set('choices', JSON.stringify(CHOICES));
   let LIST = [];  // [{text, qty}]
-  let CAT = [], STORES = [], UPDATED = '', REPORT = {};
+  let CAT = [], STORES = [], UPDATED = '', REPORT = {}, SOCIAL = null;
   let MATCHES = [], OPTIONS = [], REC = null, SEL = null, NOTE = '';
   let dirty = true;
 
@@ -711,10 +712,36 @@ summary{cursor:pointer;font-weight:700}
         el('span', {class:'t'}, el('b', {style:'font-size:16px', text: optName(x)}), el('span', {class:'small muted', text: optMode(x)}), ...extra),
         el('span', {class:'p'}, el('b', {text: fmt(x.total) + ' ₪'}), x === REC ? null : el('span', {class:'diff', text: (d >= 0 ? '+' : '−') + fmt(Math.abs(d))}))));
     });
+    renderSocial(o);
     renderTable();
     const weighed = MATCHES.some(m => m.mode === 'fresh' && m.cands.length);
     $('#r-foot').textContent = 'מחירים מקובצי השקיפות של הרשתות · עודכן ' + UPDATED + ' · המחיר בקופה עשוי להשתנות'
       + (weighed ? ' · מוצרים במשקל מחושבים לפי הערכת משקל (עוף שלם ≈1.8 ק״ג, השאר לפי ק״ג). המחיר בפועל לפי השקילה.' : '');
+  }
+  // monthly pantry at the Histadrut social supermarket: dry goods only, members only, prices kept by hand
+  function renderSocial(o){
+    const box = $('#r-social'); box.textContent = ''; box.hidden = true;
+    if (!SET.hist || !SOCIAL) return;
+    const rows = [];
+    o.used.forEach(s => o.assign.get(s.id).forEach(r => {
+      const t = r.m.line.text.replace(/['׳`]/g, "'");
+      const it = SOCIAL.items.find(x => new RegExp(x.re).test(t));
+      if (!it) return;
+      const qty = r.m.line.qty, inSoc = it.max ? Math.min(qty, it.max) : qty;
+      const here = r.p.total / qty * inSoc, there = it.p * inSoc;
+      if (there < here - 0.01) rows.push({line: r.m.line, it, qty: inSoc, here, there, capped: inSoc < qty});
+    }));
+    const gain = rows.reduce((a, r) => a + r.here - r.there, 0) - SOCIAL.fee;
+    box.hidden = false;
+    if (!rows.length) { box.append(el('div', {text: 'הסופר החברתי: אין ברשימה הזאת מוצרים יבשים שזולים שם יותר.'})); return; }
+    box.append(el('b', {text: gain > 0 ? 'מזווה חודשי בסופר החברתי: חוסך עוד ' + fmt(gain) + ' ₪' : 'הסופר החברתי לא משתלם לסל הזה'}));
+    box.append(el('div', {class:'small', text: rows.length + ' מוצרים יבשים זולים שם ב־' + fmt(rows.reduce((a, r) => a + r.here - r.there, 0)) + ' ₪, לפני משלוח ' + fmt(SOCIAL.fee) + ' ₪ · מגיע תוך ' + SOCIAL.days + (gain > 0 ? ' · כדאי בעיקר כשמזמינים כמה מוצרים יחד' : ' · המשלוח מבטל את החיסכון')}));
+    if (gain > 0) {
+      const ul = el('ul', {style:'margin:6px 0 0;padding-inline-start:18px'});
+      rows.forEach(r => ul.append(el('li', {class:'small', text: (r.qty !== 1 ? r.qty + ' × ' : '') + r.it.n + ' – ' + fmt(r.there) + ' ₪ (כאן ' + fmt(r.here) + ')' + (r.capped ? ' · מוגבל ל־' + r.it.max + ' יח׳' : '') + (r.it.warn ? ' · ' + r.it.warn : '')})));
+      box.append(ul, el('a', {class:'link', href: SOCIAL.url, target:'_blank', rel:'noopener', text:'לאתר הסופר החברתי'}));
+    }
+    box.append(el('div', {class:'small muted', text:'מחירון ידני מ־' + SOCIAL.updated + ' · ' + SOCIAL.note}));
   }
   function renderTable(){
     const act = active(), t = $('#r-table'); t.textContent = '';
@@ -784,6 +811,7 @@ summary{cursor:pointer;font-weight:700}
   function renderSettings(){
     $('#set-addr').textContent = (SET.street ? SET.street + (SET.num ? ' ' + SET.num : '') + ', ' : '') + SET.city;
     $('#set-club').checked = SET.club;
+    $('#set-hist').checked = !!SET.hist;
     document.querySelectorAll('#set-kosher button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === SET.kosher ? 'true' : 'false'));
     const box = $('#set-modes'); box.textContent = '';
     AREAS.forEach(a => {
@@ -796,6 +824,9 @@ summary{cursor:pointer;font-weight:700}
     $('#set-choices-sub').textContent = Object.keys(CHOICES).length + ' מוצרים';
   }
   $('#set-club').addEventListener('change', e => { SET.club = e.target.checked; saveSet(); OPTIONS = []; dirty = true; });
+  $('#set-hist').addEventListener('change', e => { SET.hist = e.target.checked; saveSet(); if (SET.hist) loadSocial(); });
+  function loadSocial(){ if (SOCIAL) return; fetch('social.json', {cache:'no-cache'}).then(r => r.json()).then(d => { SOCIAL = d; if (!$('#v-results').hidden) renderResults(); }).catch(() => {}); }
+  if (SET.hist) loadSocial();
   $('#set-kosher').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.kosher = b.dataset.k; saveSet(); renderSettings(); });
   $('#set-fixed-save').addEventListener('click', () => { LS.set('fixed', listText()); renderSettings(); toast('הרשימה הנוכחית נשמרה כרשימה הקבועה.'); });
   $('#set-choices-clear').addEventListener('click', () => { CHOICES = {}; saveChoices(); dirty = true; renderSettings(); toast('בחירות המותג אופסו.'); });
