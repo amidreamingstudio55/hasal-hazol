@@ -260,7 +260,7 @@ summary{cursor:pointer;font-weight:700}
   // ---------- stores ----------
   const META = {
     SH:{id:'SH', name:'שופרסל אונליין', mode:'delivery', fee:35.9, min:250, area:'delivery'},
-    CO:{id:'CO', name:'קרפור אונליין', mode:'delivery', fee:29.9, min:250, area:'delivery', note:'לא אומת שמשלחת לצור הדסה'},
+    CO:{id:'CO', name:'קרפור אונליין', mode:'delivery', fee:35.9, min:250, area:'delivery'},
     VI:{id:'VI', name:'ויקטורי אונליין', mode:'delivery', fee:35.9, min:250, area:'delivery', note:'דמי המשלוח הם הערכה'},
     CB:{id:'CB', name:'קרפור היפר בית שמש', mode:'store', fee:0, min:0, area:'bs'},
     RL:{id:'RL', name:'רמי לוי ביתר עילית', mode:'store', fee:0, min:0, area:'beitar'},
@@ -285,7 +285,7 @@ summary{cursor:pointer;font-weight:700}
     },
     'צור הדסה': {
       region: 'tzur',
-      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לכאן'], ['no','חצי חינם','לא משלחת לצור הדסה']],
+      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['ok','קרפור אונליין','משלוח 35.90 ₪'], ['ok','רמי לוי אונליין','משלוח 35.90 ₪ · המחירים לפי סניף ביתר עילית'], ['no','חצי חינם','לא משלחת לצור הדסה']],
       near: [['ok','מחסני השוק צור הדסה','בישוב'], ['ok','קרפור היפר בית שמש','קנייה בסניף'], ['ok','רמי לוי · אושר עד ביתר עילית','קנייה בסניף'], ['ok','יוחננוף · קשת טעמים ירושלים','קנייה בסניף']]
     }
   };
@@ -296,8 +296,8 @@ summary{cursor:pointer;font-weight:700}
                                    : 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q),
     CO: q => 'https://www.carrefour.co.il/search/' + encodeURIComponent(q),
     // Rami Levy's prices come from its stores; the link opens Rami Levy Online, where prices can differ slightly
-    RL: q => 'https://www.rami-levy.co.il/he/online/search?item=' + encodeURIComponent(q),
-    RR: q => 'https://www.rami-levy.co.il/he/online/search?item=' + encodeURIComponent(q)
+    RL: q => 'https://www.rami-levy.co.il/he/online/search?q=' + encodeURIComponent(q),
+    RR: q => 'https://www.rami-levy.co.il/he/online/search?q=' + encodeURIComponent(q)
   };
   const isBarcode = c => /^\d{8,14}$/.test(c) && !/^0+$/.test(c);
   // produce and other weighed items carry the chain's own short codes, which its site search doesn't know: search by name

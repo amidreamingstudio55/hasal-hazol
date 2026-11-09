@@ -17,7 +17,7 @@ NOW = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2
 # id, kind, params, how it is shown on the site
 STORES = [
     ('SH', 'shufersal', {'store': '413'}, {'name': 'שופרסל אונליין', 'mode': 'delivery', 'fee': 35.9, 'min': 250, 'area': 'delivery'}),
-    ('CO', 'carrefour', {'store': '471'}, {'name': 'קרפור אונליין', 'mode': 'delivery', 'fee': 29.9, 'min': 250, 'area': 'delivery', 'note': 'לא אומת שמשלחת לכל ישוב'}),
+    ('CO', 'carrefour', {'store': '471'}, {'name': 'קרפור אונליין', 'mode': 'delivery', 'fee': 35.9, 'min': 250, 'area': 'delivery', 'note': 'לא אומת שמשלחת לכל ישוב'}),
     ('VI', 'laib', {'code': '7290696200003001097'}, {'name': 'ויקטורי אונליין', 'mode': 'delivery', 'fee': 35.9, 'min': 250, 'area': 'delivery', 'note': 'דמי המשלוח הם הערכה'}),
     # Tzur Hadassah area
     ('CB', 'carrefour', {'store': '033'}, {'name': 'קרפור היפר בית שמש', 'mode': 'store', 'area': 'bs'}),
