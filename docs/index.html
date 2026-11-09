@@ -63,6 +63,8 @@ label.rowi{cursor:pointer}
 .chip.promo{background:var(--hi-soft);border-color:var(--hi);color:var(--hi-soft-ink);cursor:default}
 .chip.bad{background:#fbe9e7;border-color:var(--bad);color:var(--bad)}
 .chip.plain{cursor:default}
+.chip.soc{cursor:default;background:#eef3ff;border-color:#9fb3e0;color:#1f3d7a}
+.chip.soc.win{background:#e3f4ec;border-color:#2f8f6a;color:#17624b}
 .tag{display:inline-block;background:var(--hi-soft);border:1px solid var(--hi);color:var(--hi-soft-ink);border-radius:6px;padding:0 6px;font-size:12px;font-weight:700}
 .qty{display:inline-flex;align-items:center;border:1px solid #c9d3cc;border-radius:10px;overflow:hidden;flex:none}
 .qty button{width:38px;height:38px;border:0;background:var(--bg);font-size:20px;color:var(--accent);cursor:pointer}
@@ -182,6 +184,7 @@ summary{cursor:pointer;font-weight:700}
     </div>
     <div class="statusline" id="l-count"></div>
     <div id="l-items" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="note" id="l-social" hidden></div>
     <p class="small muted" id="l-empty" hidden>הרשימה ריקה. הוסיפו מוצרים בשדה למעלה, או הדביקו רשימה מווטסאפ.</p>
   </div>
   <div class="foot"><button class="cta" id="l-go" type="button" disabled>מצאו לי את הסל הזול</button></div>
@@ -557,9 +560,29 @@ summary{cursor:pointer;font-weight:700}
   });
 
   // ---------- 1 · list ----------
+  // Histadrut social supermarket (members only): which list lines it carries and whether it beats the chains
+  const socialItem = text => (SET.hist && SOCIAL) ? SOCIAL.items.find(x => new RegExp(x.re).test(text.replace(/['׳`]/g, "'"))) : null;
+  function socialRow(m){
+    const it = socialItem(m.line.text); if (!it) return null;
+    let best = null; if (m.cands.length) active().forEach(s => { const p = linePrice(m, s.k); if (p && (best == null || p.total < best)) best = p.total; });
+    const qty = m.line.qty, inSoc = it.max ? Math.min(qty, it.max) : qty;
+    const here = best == null ? null : best / qty * inSoc, there = it.p * inSoc;
+    return {it, qty: inSoc, here, there, win: here == null || there < here - 0.01, capped: inSoc < qty};
+  }
+  function renderSocialList(){
+    const box = $('#l-social'); box.textContent = ''; box.hidden = true;
+    if (!SET.hist || !SOCIAL || !CAT.length) return;
+    const rows = MATCHES.map(socialRow).filter(r => r && r.win && r.here != null);
+    if (!rows.length) return;
+    const save = rows.reduce((a, r) => a + r.here - r.there, 0), net = save - SOCIAL.fee;
+    box.hidden = false;
+    box.append(el('b', {text: rows.length + ' מוצרים זולים יותר בסופר החברתי'}),
+      el('div', {class:'small', text: net > 0 ? 'חיסכון של כ־' + fmt(net) + ' ₪ אחרי משלוח ' + fmt(SOCIAL.fee) + ' ₪ · מגיע תוך ' + SOCIAL.days
+                                              : 'החיסכון (' + fmt(save) + ' ₪) קטן מהמשלוח (' + fmt(SOCIAL.fee) + ' ₪), אז כדאי לחכות שיצטברו עוד מוצרים יבשים'}));
+  }
   function chipFor(m){
     if (!CAT.length) return [];
-    if (!m.cands.length) return [el('button', {type:'button', class:'chip bad', text:'לא נמצא · לתקן שם', onclick: () => openSheet(m)})];
+    if (!m.cands.length) { const sr = socialRow(m); return [el('button', {type:'button', class:'chip bad', text:'לא נמצא · לתקן שם', onclick: () => openSheet(m)}), ...(sr ? [el('span', {class:'chip soc win', text:'יש בסופר החברתי · ' + fmt(sr.it.p) + ' ₪'})] : [])]; }
     if (m.mode === 'fresh') return [el('span', {class:'chip plain', text:'במשקל · ' + (m.kg !== 1 ? '≈' + m.kg + ' ק״ג ליחידה · ' : 'כמות בק״ג · ') + 'הזול בכל רשת'})];
     const out = [];
     let txt, cls = 'chip';
@@ -567,6 +590,8 @@ summary{cursor:pointer;font-weight:700}
     else { const it = m.cands[m.chosen]; txt = shortName(it[1]) + (m.remembered ? ' · נזכר' : ''); if (m.remembered) cls += ' mem'; }
     out.push(el('button', {type:'button', class: cls, text: txt, onclick: () => openSheet(m), 'aria-label': 'בחירת מוצר: ' + txt}));
     if (STORES.some((s,k) => { const p = linePrice(m, k); return p && p.promo; })) out.push(el('span', {class:'chip promo', text:'מבצע'}));
+    const sr = socialRow(m);
+    if (sr) out.push(el('span', {class:'chip soc' + (sr.win ? ' win' : ''), title: sr.it.n, text: (sr.win ? 'זול יותר בסופר החברתי · ' : 'בסופר החברתי · ') + fmt(sr.it.p) + ' ₪' + (sr.it.max ? ' (עד ' + sr.it.max + ')' : '')}));
     return out;
   }
   const shortName = n => n.length > 26 ? n.slice(0, 25) + '…' : n;
@@ -586,6 +611,7 @@ summary{cursor:pointer;font-weight:700}
     const nf = CAT.length ? MATCHES.filter(m => !m.cands.length).length : 0;
     $('#l-count').textContent = LIST.length ? LIST.length + ' מוצרים' + (nf ? ' · ' + nf + ' לא נמצאו' : '') : '';
     $('#l-go').disabled = !CAT.length || !LIST.length;
+    renderSocialList();
     $('#l-sub').textContent = CAT.length ? SET.city + ' · מחירים מ־' + UPDATED : 'טוען מחירים…';
   }
   function addLine(text, code){
@@ -600,6 +626,7 @@ summary{cursor:pointer;font-weight:700}
     const v = $('#l-add').value.trim(), dl = $('#l-sugg'); dl.textContent = '';
     if (v.length < 2 || !CAT.length) return;
     const seen = new Set();
+    if (SET.hist && SOCIAL) SOCIAL.items.filter(x => x.n.startsWith(v) || x.n.includes(' ' + v)).slice(0, 2).forEach(x => { const n = x.n.split(' ').slice(0, 2).join(' '); if (!seen.has(n)) { seen.add(n); dl.append(el('option', {value: n, label: 'בסופר החברתי: ' + x.n + ' · ' + fmt(x.p) + ' ₪'})); } });
     for (const it of CAT) { if (it[1].startsWith(v) || it[1].includes(' ' + v)) { const n = it[1].split(' ').slice(0, 3).join(' '); if (!seen.has(n)) { seen.add(n); dl.append(el('option', {value:n})); if (seen.size >= 8) break; } } }
   }, 200); });
   $('#l-go').addEventListener('click', () => { compute(); SEL = REC; go('results'); });
@@ -825,7 +852,7 @@ summary{cursor:pointer;font-weight:700}
   }
   $('#set-club').addEventListener('change', e => { SET.club = e.target.checked; saveSet(); OPTIONS = []; dirty = true; });
   $('#set-hist').addEventListener('change', e => { SET.hist = e.target.checked; saveSet(); if (SET.hist) loadSocial(); });
-  function loadSocial(){ if (SOCIAL) return; fetch('social.json', {cache:'no-cache'}).then(r => r.json()).then(d => { SOCIAL = d; if (!$('#v-results').hidden) renderResults(); }).catch(() => {}); }
+  function loadSocial(){ if (SOCIAL) return; fetch('social.json', {cache:'no-cache'}).then(r => r.json()).then(d => { SOCIAL = d; if (!$('#v-results').hidden) renderResults(); if (!$('#v-list').hidden) renderList(); }).catch(() => {}); }
   if (SET.hist) loadSocial();
   $('#set-kosher').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.kosher = b.dataset.k; saveSet(); renderSettings(); });
   $('#set-fixed-save').addEventListener('click', () => { LS.set('fixed', listText()); renderSettings(); toast('הרשימה הנוכחית נשמרה כרשימה הקבועה.'); });
