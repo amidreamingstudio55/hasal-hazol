@@ -291,7 +291,9 @@ summary{cursor:pointer;font-weight:700}
   };
   // where each online store's own site can open a product (search by barcode; by name for produce without one)
   const SHOP_LINK = {
-    SH: q => 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q),
+    // Shufersal's product code is the barcode, minus a leading 729000 (and its zeros) on older Israeli barcodes
+    SH: q => /^\d{8,14}$/.test(q) ? 'https://www.shufersal.co.il/online/he/p/P_' + (q.startsWith('729000') ? q.slice(6).replace(/^0+/, '') : q)
+                                   : 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q),
     CO: q => 'https://www.carrefour.co.il/search/' + encodeURIComponent(q),
     // Rami Levy's prices come from its stores; the link opens Rami Levy Online, where prices can differ slightly
     RL: q => 'https://www.rami-levy.co.il/he/online/search?item=' + encodeURIComponent(q),
