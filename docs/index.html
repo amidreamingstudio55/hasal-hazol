@@ -302,6 +302,9 @@ summary{cursor:pointer;font-weight:700}
   const isBarcode = c => /^\d{8,14}$/.test(c) && !/^0+$/.test(c);
   // produce and other weighed items carry the chain's own short codes, which its site search doesn't know: search by name
   const shopQuery = it => (isBarcode(it[0]) && it[3] !== 1 && !/^72900000\d{5}$/.test(it[0])) ? it[0] : it[1].split(' ').slice(0, 3).join(' ');
+  // weighed products are priced per kg; one "unit" on the list is about this many kg
+  const KG_PER_UNIT = [[/עוף שלם/, 1.8], [/בטטה|תפוח אדמה|תפו"א/, 1], [/./, 1]];
+  const kgPerUnit = t => KG_PER_UNIT.find(([re]) => re.test(t))[1];
   const SPLIT_MIN = 15;     // don't suggest two shops for less than this
   const DELIV_PREF = 15;    // prefer home delivery when it costs at most this much more
 
@@ -423,7 +426,7 @@ summary{cursor:pointer;font-weight:700}
     if (q.startsWith('~')) {
       const alts = q.slice(1).split('|');
       const cands = CAT.filter(it => (it[3] === 1 || /1 ?ק"?ג|קג|\s1$/.test(it[1])) && alts.some(a => it[1].startsWith(a)) && !/אורגני|במשקל.*מלח|כבוש|חמוץ|מטוגן|שבבים|פסטרמה|מעושן|קפוא|נקניק|בגריל|מבושל|כבש/.test(it[1]));
-      return {line, mode:'fresh', cands, chosen:'auto'};
+      return {line, mode:'fresh', cands, chosen:'auto', kg: kgPerUnit(line.text)};
     }
     if (q.startsWith('%')) {
       const re = new RegExp(q.slice(1));
@@ -437,7 +440,8 @@ summary{cursor:pointer;font-weight:700}
     cands.forEach(it => {
       const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
       const med = ps[Math.floor(ps.length/2)] || 1e9;
-      it._s = ps.length * 100 + (it[1].startsWith(toks[0]) ? 300 : 0) - med * 0.5;
+      const combo = /(^|\s)עם\s|סלט|ממרח|פסטה|רוטב|כריך|מוקפץ|ארוחה/.test(it[1]) && !/עם|סלט|ממרח|פסטה|רוטב/.test(q);
+      it._s = ps.length * 100 + (it[1].startsWith(toks[0]) ? 300 : 0) - med * 0.5 - (combo ? 1000 : 0);
     });
     cands.sort((a,b) => b._s - a._s);
     return remember({line, mode:'pack', cands: cands.slice(0, 12), chosen: cands.length ? 0 : -1});
@@ -456,7 +460,8 @@ summary{cursor:pointer;font-weight:700}
     if (m.mode === 'fresh' || m.chosen === 'cheapest') {
       let best = null;
       for (const it of m.cands) { const u = unit(it, k, qty); if (u != null && (best == null || u < best.u)) best = {u, it}; }
-      return best ? {total: best.u * qty, it: best.it, u: best.u, promo: promoAt(best.it, k, qty)} : null;
+      const f = m.mode === 'fresh' ? m.kg : 1;
+      return best ? {total: best.u * qty * f, it: best.it, u: best.u, promo: promoAt(best.it, k, qty)} : null;
     }
     const it = m.cands[m.chosen]; if (!it) return null;
     const u = unit(it, k, qty); return u == null ? null : {total: u * qty, it, u, promo: promoAt(it, k, qty)};
@@ -554,7 +559,7 @@ summary{cursor:pointer;font-weight:700}
   function chipFor(m){
     if (!CAT.length) return [];
     if (!m.cands.length) return [el('button', {type:'button', class:'chip bad', text:'לא נמצא · לתקן שם', onclick: () => openSheet(m)})];
-    if (m.mode === 'fresh') return [el('span', {class:'chip plain', text:'לפי ק״ג · הזול בכל רשת'})];
+    if (m.mode === 'fresh') return [el('span', {class:'chip plain', text:'במשקל · ' + (m.kg !== 1 ? '≈' + m.kg + ' ק״ג ליחידה · ' : 'כמות בק״ג · ') + 'הזול בכל רשת'})];
     const out = [];
     let txt, cls = 'chip';
     if (m.chosen === 'cheapest') { txt = m.variety ? 'הכי זול · ' + m.cands.length + ' סוגים' : 'הכי זול בכל רשת'; if (m.remembered) cls += ' mem'; }
@@ -707,7 +712,9 @@ summary{cursor:pointer;font-weight:700}
         el('span', {class:'p'}, el('b', {text: fmt(x.total) + ' ₪'}), x === REC ? null : el('span', {class:'diff', text: (d >= 0 ? '+' : '−') + fmt(Math.abs(d))}))));
     });
     renderTable();
-    $('#r-foot').textContent = 'מחירים מקובצי השקיפות של הרשתות · עודכן ' + UPDATED + ' · המחיר בקופה עשוי להשתנות';
+    const weighed = MATCHES.some(m => m.mode === 'fresh' && m.cands.length);
+    $('#r-foot').textContent = 'מחירים מקובצי השקיפות של הרשתות · עודכן ' + UPDATED + ' · המחיר בקופה עשוי להשתנות'
+      + (weighed ? ' · מוצרים במשקל מחושבים לפי הערכת משקל (עוף שלם ≈1.8 ק״ג, השאר לפי ק״ג). המחיר בפועל לפי השקילה.' : '');
   }
   function renderTable(){
     const act = active(), t = $('#r-table'); t.textContent = '';
@@ -743,7 +750,8 @@ summary{cursor:pointer;font-weight:700}
         const k = keyOf(r.m.line.text), on = !!checks[k];
         if (on) done++; else left += r.p.total;
         const cb = el('input', {type:'checkbox', checked: on, onchange: () => { checks[k] = cb.checked; LS.set(checksKey(o), JSON.stringify(checks)); renderStore(); }});
-        const name = (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1];
+        const name = r.m.mode === 'fresh' ? '≈' + +(r.m.line.qty * r.m.kg).toFixed(2) + ' ק״ג ' + r.p.it[1]
+                                          : (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1];
         const link = SHOP_LINK[s.id] ? el('a', {class:'golink', href: SHOP_LINK[s.id](shopQuery(r.p.it)), target:'_blank', rel:'noopener', 'aria-label':'פתיחה באתר ' + s.name + ': ' + r.p.it[1], text:'לאתר'}) : null;
         box.append(el('div', {style:'display:flex;gap:6px;align-items:center'},
           el('label', {class:'srow', style:'flex:1;min-width:0'}, cb, el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})), link));
@@ -768,7 +776,7 @@ summary{cursor:pointer;font-weight:700}
   }
   $('#s-share').addEventListener('click', () => {
     const o = SEL || REC; if (!o) return;
-    const parts = o.used.map(s => { const rows = o.assign.get(s.id); return s.name + ':\n' + rows.map(r => '• ' + (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1] + ' – ' + fmt(r.p.total) + ' ₪').join('\n'); });
+    const parts = o.used.map(s => { const rows = o.assign.get(s.id); return s.name + ':\n' + rows.map(r => '• ' + (r.m.mode === 'fresh' ? '≈' + +(r.m.line.qty * r.m.kg).toFixed(2) + ' ק״ג ' : (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '')) + r.p.it[1] + ' – ' + fmt(r.p.total) + ' ₪').join('\n'); });
     openWhatsApp('הסל הזול – מה קונים ואיפה (' + fmt(o.total) + ' ₪):\n\n' + parts.join('\n\n'));
   });
 
