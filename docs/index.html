@@ -294,7 +294,8 @@ summary{cursor:pointer;font-weight:700}
     SH: q => 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q)
   };
   const isBarcode = c => /^\d{8,14}$/.test(c) && !/^0+$/.test(c);
-  const shopQuery = it => isBarcode(it[0]) ? it[0] : it[1];
+  // produce and other weighed items carry the chain's own short codes, which its site search doesn't know: search by name
+  const shopQuery = it => (isBarcode(it[0]) && it[3] !== 1 && !/^72900000\d{5}$/.test(it[0])) ? it[0] : it[1].split(' ').slice(0, 3).join(' ');
   const SPLIT_MIN = 15;     // don't suggest two shops for less than this
   const DELIV_PREF = 15;    // prefer home delivery when it costs at most this much more
 
