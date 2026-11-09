@@ -291,7 +291,11 @@ summary{cursor:pointer;font-weight:700}
   };
   // where each online store's own site can open a product (search by barcode; by name for produce without one)
   const SHOP_LINK = {
-    SH: q => 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q)
+    SH: q => 'https://www.shufersal.co.il/online/he/search?text=' + encodeURIComponent(q),
+    CO: q => 'https://www.carrefour.co.il/search/' + encodeURIComponent(q),
+    // Rami Levy's prices come from its stores; the link opens Rami Levy Online, where prices can differ slightly
+    RL: q => 'https://www.rami-levy.co.il/he/online/search?item=' + encodeURIComponent(q),
+    RR: q => 'https://www.rami-levy.co.il/he/online/search?item=' + encodeURIComponent(q)
   };
   const isBarcode = c => /^\d{8,14}$/.test(c) && !/^0+$/.test(c);
   // produce and other weighed items carry the chain's own short codes, which its site search doesn't know: search by name
@@ -745,7 +749,7 @@ summary{cursor:pointer;font-weight:700}
     });
     if (SHOP_LINK[s.id]) {
       box.prepend(el('div', {class:'note'},
-        el('div', {text:'הזמנה ב' + s.name + ': לחצו "לאתר" ליד כל מוצר, או העתיקו את רשימת ההזמנה ושלחו אותה ל־Claude, שימלא את העגלה בחשבון שלכם ויעצור לפני התשלום.'}),
+        el('div', {text:(s.mode === 'store' ? 'אפשר להזמין גם ברמי לוי אונליין (המחירים שם עשויים להיות מעט שונים מהסניף). ' : 'הזמנה ב' + s.name + ': ') + 'לחצו "לאתר" ליד כל מוצר, או העתיקו את רשימת ההזמנה ושלחו אותה ל־Claude, שימלא את העגלה בחשבון שלכם ויעצור לפני התשלום.'}),
         el('button', {type:'button', class:'link', text:'העתקת רשימת ההזמנה למילוי עגלה', onclick: () => {
           const lines = rows.map(r => shopQuery(r.p.it) + ' | ' + r.m.line.qty + ' | ' + r.p.it[1]);
           const txt = 'מילוי עגלה ב' + s.name + ' – הסל הזול (ברקוד | כמות | מוצר):\n' + lines.join('\n');
