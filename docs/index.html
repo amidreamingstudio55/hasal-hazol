@@ -63,6 +63,15 @@ label.rowi{cursor:pointer}
 .chip.promo{background:var(--hi-soft);border-color:var(--hi);color:var(--hi-soft-ink);cursor:default}
 .chip.bad{background:#fbe9e7;border-color:var(--bad);color:var(--bad)}
 .chip.plain{cursor:default}
+.chip.approx{background:#fff5e0;border-color:#d9a441;color:#7a4d00}
+.sugg{background:#fff;border:1px solid #c9d3cc;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.08);overflow:hidden;margin-top:-4px;display:flex;flex-direction:column}
+.sugg button{display:flex;align-items:center;gap:10px;justify-content:space-between;text-align:start;background:none;border:0;border-bottom:1px solid #eef1ef;padding:10px 14px;font:inherit;font-size:15px;color:inherit;cursor:pointer;min-height:48px}
+.sugg button:last-child{border-bottom:0}
+.sugg button[aria-selected=true],.sugg button:hover{background:#eef6f2}
+.sugg .sn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sugg .sp{flex:none;font-size:13px;color:#5d6b63;text-align:end}
+.sugg .sp b{color:#17624b;font-size:14px}
+.sugg .head{font-size:13px;color:#5d6b63;padding:8px 14px 2px}
 .chip.soc{cursor:default;background:#eef3ff;border-color:#9fb3e0;color:#1f3d7a}
 .chip.soc.win{background:#e3f4ec;border-color:#2f8f6a;color:#17624b}
 .tag{display:inline-block;background:var(--hi-soft);border:1px solid var(--hi);color:var(--hi-soft-ink);border-radius:6px;padding:0 6px;font-size:12px;font-weight:700}
@@ -171,12 +180,12 @@ summary{cursor:pointer;font-weight:700}
     <div class="search">
       <form id="l-addform" role="search">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5d6b63" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
-        <input id="l-add" type="text" placeholder="הוסיפו מוצר…" aria-label="הוספת מוצר" enterkeyhint="done" list="l-sugg" autocomplete="off">
+        <input id="l-add" type="text" placeholder="הוסיפו מוצר, למשל שוקולד מריר…" aria-label="הוספת מוצר" enterkeyhint="done" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="l-sugg">
         <button class="add" type="submit">הוספה</button>
       </form>
       <button class="sq" id="l-scan" type="button" aria-label="סריקת ברקוד" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 8v8M11 8v8M14 8v8M17 8v8"></path></svg></button>
     </div>
-    <datalist id="l-sugg"></datalist>
+    <div id="l-sugg" class="sugg" role="listbox" aria-label="הצעות מוצרים" hidden></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-paste">הדבקת רשימה מווטסאפ</button>
       <button type="button" class="chip" style="height:36px;padding:0 14px" id="l-fixed">הרשימה הקבועה שלנו</button>
@@ -425,6 +434,55 @@ summary{cursor:pointer;font-weight:700}
   const unit = (it, k, qty) => { const p = it[4][k]; if (!(p > 0)) return null; const pr = it[5][k]; return (pr && qty >= pr[0] && (SET.club || !pr[2])) ? pr[1] : p; };
   const promoAt = (it, k, qty) => { const pr = it[5][k]; return !!(pr && qty >= pr[0] && (SET.club || !pr[2]) && it[4][k] > 0); };
 
+  // ---------- search: forgiving, like a supermarket site ----------
+  const FINAL = {'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
+  function norm(t){
+    let x = (' ' + t + ' ').toLowerCase().replace(/[״"'׳`]/g, '').replace(/[ךםןףץ]/g, c => FINAL[c]).replace(/\s+/g, ' ');
+    x = x.replace(/ ל[\/.]ס\.?(?= )/g, ' ללא סוכר').replace(/ (ללא|בלי) תוספת סוכר(?= )/g, ' ללא סוכר')
+         .replace(/ (בלי|נטול|נטולת|נטולי)(?= )/g, ' ללא').replace(/ דיאט(?= )/g, ' ללא סוכר');
+    return x.replace(/[^א-תa-z0-9%.]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  const nameN = it => it._n || (it._n = ' ' + norm(it[1]) + ' ');
+  const stem = w => w.length >= 5 ? w.replace(/(ימ|ות|יות)$/, '') : w;
+  function oneEdit(a, b){  // a typo of one letter (swap, extra, missing or wrong)
+    if (Math.abs(a.length - b.length) > 1 || a.length < 4) return false;
+    let i = 0, j = 0, e = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++e > 1) return false;
+      if (a.length > b.length) i++; else if (b.length > a.length) j++; else { if (a[i+1] === b[j] && a[i] === b[j+1]) { i += 2; j += 2; continue; } i++; j++; }
+    }
+    return e + (a.length - i) + (b.length - j) <= 1;
+  }
+  function tokHit(tk, n){  // 3 = whole word, 2 = part of a word, 1 = singular/plural or typo, 0 = no
+    if (n.includes(' ' + tk + ' ')) return 3;
+    if (n.includes(tk)) return 2;
+    const st = stem(tk); if (st !== tk && n.includes(st)) return 1;
+    if (tk.length >= 4) { for (const w of n.trim().split(' ')) if (oneEdit(tk, w) || oneEdit(stem(tk), stem(w))) return 1; }
+    return 0;
+  }
+  // rank catalog items for a free-text query; strict = every word must match
+  function searchCat(text, strict, limit){
+    const toks = norm(text).split(' ').filter(t => t && t.length > 1);
+    if (!toks.length) return [];
+    const need = strict ? toks.length : Math.max(1, Math.ceil(toks.length * 0.6));
+    const qn = ' ' + toks.join(' ') + ' ';
+    const out = [];
+    for (const it of CAT) {
+      const n = nameN(it);
+      let hits = 0, score = 0, miss = 0;
+      for (const tk of toks) { const h = tokHit(tk, n); if (h) { hits++; score += h * 50; } else if (++miss > toks.length - need) break; }
+      if (hits < need) continue;
+      const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
+      const combo = / עמ | סלט | ממרח | פסטה | רוטב | כריכ | ארוחה /.test(n) && !/ עמ | סלט | ממרח | פסטה | רוטב /.test(qn);
+      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|קרמ|פודינג|טבלי|מוס|בראוני) /g) || []).some(w => !qn.includes(w));
+      score += hits * 120 + (n.startsWith(' ' + toks[0]) ? 150 : 0) + ps.length * 40 - (ps[Math.floor(ps.length/2)] || 100) * 0.3 - (combo ? 600 : 0) - (other ? 400 : 0);
+      out.push({it, score, hits});
+    }
+    out.sort((a,b) => b.score - a.score);
+    return out.slice(0, limit || 12);
+  }
+
   function match(line){
     const q = queryFor(line.text);
     if (q.startsWith('~')) {
@@ -439,16 +497,10 @@ summary{cursor:pointer;font-weight:700}
       cands.sort((a,b) => (b[4].filter(p => p > 0).length - a[4].filter(p => p > 0).length) || (lowest(a) - lowest(b)));
       return remember({line, mode:'pack', cands: cands.slice(0, 20), chosen: cands.length ? 'cheapest' : -1, variety: true});
     }
-    const toks = q.split(/\s+/).filter(Boolean);
-    let cands = CAT.filter(it => toks.every(tk => it[1].includes(tk)));
-    cands.forEach(it => {
-      const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
-      const med = ps[Math.floor(ps.length/2)] || 1e9;
-      const combo = /(^|\s)עם\s|סלט|ממרח|פסטה|רוטב|כריך|מוקפץ|ארוחה/.test(it[1]) && !/עם|סלט|ממרח|פסטה|רוטב/.test(q);
-      it._s = ps.length * 100 + (it[1].startsWith(toks[0]) ? 300 : 0) - med * 0.5 - (combo ? 1000 : 0);
-    });
-    cands.sort((a,b) => b._s - a._s);
-    return remember({line, mode:'pack', cands: cands.slice(0, 12), chosen: cands.length ? 0 : -1});
+    let found = searchCat(q, true, 12), approx = false;
+    if (!found.length) { found = searchCat(q, false, 12); approx = found.length > 0; }
+    const cands = found.map(x => x.it);
+    return remember({line, mode:'pack', cands, chosen: cands.length ? 0 : -1, approx});
   }
   function remember(m){
     const c = CHOICES[keyOf(m.line.text)];
@@ -587,7 +639,7 @@ summary{cursor:pointer;font-weight:700}
     const out = [];
     let txt, cls = 'chip';
     if (m.chosen === 'cheapest') { txt = m.variety ? 'הכי זול · ' + m.cands.length + ' סוגים' : 'הכי זול בכל רשת'; if (m.remembered) cls += ' mem'; }
-    else { const it = m.cands[m.chosen]; txt = shortName(it[1]) + (m.remembered ? ' · נזכר' : ''); if (m.remembered) cls += ' mem'; }
+    else { const it = m.cands[m.chosen]; txt = shortName(it[1]) + (m.remembered ? ' · נזכר' : ''); if (m.remembered) cls += ' mem'; else if (m.approx) { cls += ' approx'; txt = 'הכי קרוב: ' + txt; } }
     out.push(el('button', {type:'button', class: cls, text: txt, onclick: () => openSheet(m), 'aria-label': 'בחירת מוצר: ' + txt}));
     if (STORES.some((s,k) => { const p = linePrice(m, k); return p && p.promo; })) out.push(el('span', {class:'chip promo', text:'מבצע'}));
     const sr = socialRow(m);
@@ -619,16 +671,41 @@ summary{cursor:pointer;font-weight:700}
     parsed.forEach(p => { const ex = LIST.find(x => keyOf(x.text) === keyOf(p.text)); if (ex) ex.qty += p.qty; else LIST.push(p); if (code) { CHOICES[keyOf(p.text)] = code; saveChoices(); } });
     saveList(); renderList();
   }
-  $('#l-addform').addEventListener('submit', e => { e.preventDefault(); const v = $('#l-add').value.trim(); if (!v) return; addLine(v); $('#l-add').value = ''; $('#l-add').focus(); });
-  // light suggestions from the catalog
-  let suggT;
-  $('#l-add').addEventListener('input', () => { clearTimeout(suggT); suggT = setTimeout(() => {
-    const v = $('#l-add').value.trim(), dl = $('#l-sugg'); dl.textContent = '';
-    if (v.length < 2 || !CAT.length) return;
-    const seen = new Set();
-    if (SET.hist && SOCIAL) SOCIAL.items.filter(x => x.n.startsWith(v) || x.n.includes(' ' + v)).slice(0, 2).forEach(x => { const n = x.n.split(' ').slice(0, 2).join(' '); if (!seen.has(n)) { seen.add(n); dl.append(el('option', {value: n, label: 'בסופר החברתי: ' + x.n + ' · ' + fmt(x.p) + ' ₪'})); } });
-    for (const it of CAT) { if (it[1].startsWith(v) || it[1].includes(' ' + v)) { const n = it[1].split(' ').slice(0, 3).join(' '); if (!seen.has(n)) { seen.add(n); dl.append(el('option', {value:n})); if (seen.size >= 8) break; } } }
-  }, 200); });
+  $('#l-addform').addEventListener('submit', e => { e.preventDefault(); const v = $('#l-add').value.trim(); if (!v) return; addLine(v); $('#l-add').value = ''; hideSugg(); $('#l-add').focus(); });
+  // live suggestions: products with their lowest price, like the search box on a supermarket site
+  let suggT, suggSel = -1, suggItems = [];
+  const sugg = $('#l-sugg'), addIn = $('#l-add');
+  function hideSugg(){ sugg.hidden = true; sugg.textContent = ''; suggItems = []; suggSel = -1; addIn.setAttribute('aria-expanded', 'false'); }
+  function drawSugg(){
+    const v = addIn.value.trim(); sugg.textContent = ''; suggItems = []; suggSel = -1;
+    if (v.length < 2 || !CAT.length) return hideSugg();
+    let res = searchCat(v, true, 8), approx = false;
+    if (!res.length) { res = searchCat(v, false, 8); approx = res.length > 0; }
+    const pick = (text, code) => { addLine(text, code); addIn.value = ''; hideSugg(); addIn.focus(); };
+    const row = (main, side, fn) => { const b = el('button', {type:'button', role:'option', 'aria-selected':'false', onmousedown: e => e.preventDefault(), onclick: fn}, el('span', {class:'sn', text: main}), side); suggItems.push(b); sugg.append(b); };
+    row('להוסיף "' + v + '"', el('span', {class:'sp', text: res.length ? 'הזול מכל הסוגים' : ''}), () => pick(v));
+    if (SET.hist && SOCIAL) { const so = socialItem(v); if (so) row(so.n, el('span', {class:'sp'}, el('b', {text: fmt(so.p) + ' ₪'}), ' בסופר החברתי'), () => pick(v)); }
+    if (approx) sugg.append(el('div', {class:'head', text:'לא מצאנו בדיוק את זה. אולי התכוונתם ל:'}));
+    res.forEach(({it}) => {
+      const c = cheapestAt(it, 1);
+      row(it[1], el('span', {class:'sp'}, c ? el('b', {text: fmt(c.u) + ' ₪'}) : '', c ? ' ' + c.s.name : ''), () => pick(it[1].split(' ').slice(0, 5).join(' '), it[0]));
+    });
+    if (!res.length) sugg.append(el('div', {class:'head', text:'לא מצאנו מוצר כזה במחירונים. אפשר להוסיף בכל זאת, או לנסות מילה אחרת.'}));
+    sugg.hidden = false; addIn.setAttribute('aria-expanded', 'true');
+  }
+  addIn.addEventListener('input', () => { clearTimeout(suggT); suggT = setTimeout(drawSugg, 150); });
+  addIn.addEventListener('focus', () => { if (addIn.value.trim().length >= 2) drawSugg(); });
+  addIn.addEventListener('blur', () => setTimeout(hideSugg, 150));
+  addIn.addEventListener('keydown', e => {
+    if (sugg.hidden || !suggItems.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      suggSel = (suggSel + (e.key === 'ArrowDown' ? 1 : -1) + suggItems.length) % suggItems.length;
+      suggItems.forEach((b, i) => b.setAttribute('aria-selected', i === suggSel ? 'true' : 'false'));
+      suggItems[suggSel].scrollIntoView({block:'nearest'});
+    } else if (e.key === 'Enter' && suggSel >= 0) { e.preventDefault(); suggItems[suggSel].click(); }
+    else if (e.key === 'Escape') hideSugg();
+  });
   $('#l-go').addEventListener('click', () => { compute(); SEL = REC; go('results'); });
   $('#l-settings').addEventListener('click', () => go('settings'));
   $('#l-share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));

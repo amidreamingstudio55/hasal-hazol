@@ -256,7 +256,7 @@ def load_local(sid):
 
 def build(P, R, ok):
     cnt = Counter(c for s in ok for c in P[s])
-    keep = [c for c, n in cnt.items() if n >= 2 or any(P[s].get(c, {}).get('w') == '1' for s in ok)]
+    keep = list(cnt)  # every product, also those sold in one chain only, so search finds what people ask for
     items = []
     for c in keep:
         names = [P[s][c]['name'] for s in ok if c in P[s]]
