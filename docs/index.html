@@ -216,6 +216,7 @@ summary{cursor:pointer;font-weight:700}
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="total" id="r-total">—</span><span class="save" id="r-save" hidden></span></div>
       <span class="small muted" style="font-size:14px" id="r-why"></span>
       <button class="cta" id="r-go" type="button" style="height:52px;font-size:18px;margin-top:4px">לרשימת הקנייה</button>
+      <div id="r-sites" style="display:flex;flex-wrap:wrap;gap:8px"></div>
     </div>
     <div class="note" id="r-note" hidden></div>
     <div class="note" id="r-social" hidden></div>
@@ -306,6 +307,16 @@ summary{cursor:pointer;font-weight:700}
       near: [['ok','מחסני השוק צור הדסה','בישוב'], ['ok','קרפור היפר בית שמש','קנייה בסניף'], ['ok','רמי לוי · אושר עד ביתר עילית','קנייה בסניף'], ['ok','יוחננוף · קשת טעמים ירושלים','קנייה בסניף']]
     }
   };
+  // each chain's own website (online ordering, or the chain's site for in-store chains)
+  const SITE = {
+    SH: 'https://www.shufersal.co.il/online/', SD: 'https://www.shufersal.co.il/online/',
+    CO: 'https://www.carrefour.co.il/', CB: 'https://www.carrefour.co.il/', CR: 'https://www.carrefour.co.il/',
+    RL: 'https://www.rami-levy.co.il/he/online', RR: 'https://www.rami-levy.co.il/he/online',
+    OA: 'https://www.osherad.co.il/', OR: 'https://www.osherad.co.il/', YO: 'https://yochananof.co.il/', YR: 'https://yochananof.co.il/',
+    KT: 'https://www.keshet-teamim.co.il/', KR: 'https://www.keshet-teamim.co.il/', TO: 'https://www.tivtaam.co.il/',
+    HH: 'https://shop.hazi-hinam.co.il/', VI: 'https://www.victoryonline.co.il/'
+  };
+  function siteBtn(s, label){ return SITE[s.id] ? el('a', {class:'chip', style:'height:40px;padding:0 14px;display:inline-flex;align-items:center;text-decoration:none', href: SITE[s.id], target:'_blank', rel:'noopener', text: label || ((s.mode === 'delivery' ? 'להזמנה באתר ' : 'לאתר ') + s.name + ' ↗')}) : null; }
   // where each online store's own site can open a product (search by barcode; by name for produce without one)
   const SHOP_LINK = {
     // Shufersal's product code is the barcode, minus a leading 729000 (and its zeros) on older Israeli barcodes
@@ -818,6 +829,7 @@ summary{cursor:pointer;font-weight:700}
     const o = SEL || REC, isRec = o === REC;
     $('#r-kicker').textContent = isRec ? 'הכי משתלם לסל שלכם' : 'האפשרות שבחרתם';
     $('#r-name').textContent = optName(o);
+    const sites = $('#r-sites'); sites.textContent = ''; o.used.forEach(s => { const b = siteBtn(s); if (b) sites.append(b); });
     $('#r-total').textContent = fmt(o.total) + ' ₪';
     const complete = OPTIONS.filter(x => x.used.length === 1 && x.missing === o.missing && x.minOk);
     const worst = complete.length ? complete.reduce((a,b) => b.total > a.total ? b : a) : null;
@@ -915,8 +927,10 @@ summary{cursor:pointer;font-weight:700}
           el('label', {class:'srow', style:'flex:1;min-width:0'}, cb, el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})), link));
       });
     });
+    if (!SHOP_LINK[s.id] && SITE[s.id]) box.prepend(el('div', {class:'note'},
+      el('div', {text: s.mode === 'delivery' ? 'ההזמנה עצמה נעשית באתר ' + s.name + '. סמנו כאן מה כבר בעגלה.' : 'הרשימה מסודרת לפי מחלקות בחנות. סמנו מה כבר בעגלה.'}), siteBtn(s)));
     if (SHOP_LINK[s.id]) {
-      box.prepend(el('div', {class:'note'},
+      box.prepend(el('div', {class:'note'}, siteBtn(s),
         el('div', {text:(s.mode === 'store' ? 'אפשר להזמין גם ברמי לוי אונליין (המחירים שם עשויים להיות מעט שונים מהסניף). ' : 'הזמנה ב' + s.name + ': ') + 'לחצו "לאתר" ליד כל מוצר, או העתיקו את רשימת ההזמנה ושלחו אותה ל־Claude, שימלא את העגלה בחשבון שלכם ויעצור לפני התשלום.'}),
         el('button', {type:'button', class:'link', text:'העתקת רשימת ההזמנה למילוי עגלה', onclick: () => {
           const lines = rows.map(r => shopQuery(r.p.it) + ' | ' + r.m.line.qty + ' | ' + r.p.it[1]);
