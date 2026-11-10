@@ -78,6 +78,10 @@ label.rowi{cursor:pointer}
 .qty{display:inline-flex;align-items:center;border:1px solid #c9d3cc;border-radius:10px;overflow:hidden;flex:none}
 .qty button{width:38px;height:38px;border:0;background:var(--bg);font-size:20px;color:var(--accent);cursor:pointer}
 .qty span{min-width:30px;text-align:center;font-weight:700}
+.qty input{width:46px;height:38px;border:0;text-align:center;font:inherit;font-weight:700;background:#fff;-moz-appearance:textfield;padding:0}
+.qty input::-webkit-inner-spin-button,.qty input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.qty small{font-size:11px;color:#5d6b63;margin-inline-start:-4px;margin-inline-end:4px}
+.ico{flex:none;width:40px;height:40px;border-radius:12px;background:#f1f5f2;display:grid;place-items:center;font-size:24px;line-height:1}
 .item{background:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px}
 .item .t{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
 .item .t b{font-size:17px}
@@ -649,17 +653,38 @@ summary{cursor:pointer;font-weight:700}
     return out;
   }
   const shortName = n => n.length > 26 ? n.slice(0, 25) + '…' : n;
+  // a picture for each line, so the list is easy to scan (emoji: no outside images to load)
+  const ICONS = [
+    [/מלפפון חמוצ|חמוצים|מלפפונים במלח/, '🫙'], [/מלפפון/, '🥒'], [/עגבני/, '🍅'], [/חציל/, '🍆'], [/גזר/, '🥕'], [/בצל ירוק/, '🌱'], [/בצל/, '🧅'], [/שום/, '🧄'],
+    [/תפוח אדמה|תפו"?א|תפוחי אדמה|בטטה/, '🥔'], [/פלפל/, '🫑'], [/חסה|כרוב|עלי|תרד|ברוקולי/, '🥬'], [/אבוקדו/, '🥑'], [/תירס/, '🌽'], [/פטריות/, '🍄'],
+    [/לימונ/, '🍋'], [/תפוז|קלמנטינה|מנדרינה/, '🍊'], [/בננ/, '🍌'], [/ענב/, '🍇'], [/אבטיח/, '🍉'], [/מלון/, '🍈'], [/תות/, '🍓'], [/אגס/, '🍐'], [/אפרסק|נקטרינה/, '🍑'], [/דובדבנ/, '🍒'], [/אננס/, '🍍'], [/מנגו/, '🥭'], [/קיווי/, '🥝'], [/קוקוס/, '🥥'], [/תפוח/, '🍎'],
+    [/פטרוזליה|כוסברה|שמיר|נענע|בזיליקום|כרפס/, '🌿'],
+    [/חלב/, '🥛'], [/קוטג|גבינה|גבינת|לבנה|בולגרית|צפתית|מוצרלה|פרמזן/, '🧀'], [/יוגורט|מעדן|אשל|לבן|שמנת/, '🥣'], [/חמאה/, '🧈'], [/ביצ/, '🥚'],
+    [/עוף|פרגית|שניצל|כרעיים|כנפיים|הודו/, '🍗'], [/בשר|טחון|סטייק|אנטריקוט|קבב|המבורגר/, '🥩'], [/נקניק|פסטרמה/, '🌭'], [/דג|סלמון|אמנון|טונה|סרדינים/, '🐟'],
+    [/לחם|חלה|לחמני|פיתה|באגט|טורטיה/, '🍞'], [/פסטה|ספגטי|פתיתים|אטריות|מקרוני|פוזילי/, '🍝'], [/אורז/, '🍚'], [/קמח|שמרים/, '🌾'], [/סוכר|מלח/, '🧂'], [/דבש/, '🍯'],
+    [/שמן/, '🫒'], [/זית/, '🫒'], [/טחינה|חומוס|ממרח|ריבה|קטשופ|מיונז|חרדל|רסק|רוטב/, '🥫'], [/שימור|תירס מתוק|שעועית|קטניות|עדשים/, '🥫'],
+    [/שוקולד|במבה|ביסלי|חטיף|עוגי|ופל|ממתק|סוכרי|קרקר/, '🍫'], [/דגני|קורנפלקס|שיבולת|גרנולה/, '🥣'], [/קפה/, '☕'], [/תה/, '🫖'], [/מים|סודה/, '💧'], [/מיץ|שתייה|קולה|משקה/, '🧃'], [/יין|בירה/, '🍷'], [/גלידה|ארטיק/, '🍦'],
+    [/נייר|טישו|מגבות/, '🧻'], [/סבון|שמפו|מרכך שיער|משחת שיניים|דאודורנט|טיפוח/, '🧴'], [/כביסה|כלים|אקונומיקה|ניקוי|מטליות|ספוג|שקיות/, '🧽'], [/חיתול|מגבונים/, '👶'], [/חתול|כלב/, '🐾']
+  ];
+  const iconFor = t => (ICONS.find(([re]) => re.test(t)) || [0, '🛒'])[1];
+  // weighed lines (fruit and veg, meat sold by the kilo) go in half-kilo steps and take any amount
+  const isKg = m => (m.mode === 'fresh' && m.kg === 1) || (m.mode === 'pack' && m.cands.length && m.chosen !== 'cheapest' && m.cands[m.chosen] && m.cands[m.chosen][3] == 1);
   function renderList(){
     ensureMatches();
     const box = $('#l-items'); box.textContent = '';
     LIST.forEach((x, i) => {
       const m = MATCHES[i] && MATCHES[i].line === x ? MATCHES[i] : {line:x, cands:[], mode:'pack'};
-      const minus = el('button', {type:'button', 'aria-label':'הפחתה', text:'−', onclick: () => { if (x.qty > 1) { x.qty = Math.max(1, +(x.qty - 1).toFixed(2)); saveList(); renderList(); } }});
-      const plus = el('button', {type:'button', 'aria-label':'הוספה', text:'+', onclick: () => { x.qty = +(x.qty + 1).toFixed(2); saveList(); renderList(); }});
+      const kg = isKg(m), step = kg ? 0.5 : 1;
+      const setQ = q => { q = Math.round(q / (kg ? 0.1 : 1)) * (kg ? 0.1 : 1); x.qty = Math.max(kg ? 0.1 : 1, +q.toFixed(2)); saveList(); renderList(); };
+      const minus = el('button', {type:'button', 'aria-label':'הפחתה', text:'−', onclick: () => { if (x.qty > step - 1e-9) setQ(x.qty - step); }});
+      const plus = el('button', {type:'button', 'aria-label':'הוספה', text:'+', onclick: () => setQ(x.qty + step)});
+      const num = el('input', {type:'number', inputmode: kg ? 'decimal' : 'numeric', step: String(step), min: kg ? '0.1' : '1', value: String(x.qty), 'aria-label':'כמות ' + x.text + (kg ? ' בק״ג' : ''),
+        onchange: e => { const v = parseFloat(String(e.target.value).replace(',', '.')); if (v > 0) setQ(v); else e.target.value = x.qty; }, onfocus: e => e.target.select()});
       const del = el('button', {type:'button', class:'del', 'aria-label':'מחיקת ' + x.text, onclick: () => { LIST.splice(i, 1); saveList(); renderList(); }}); del.innerHTML = ICON.x;
       box.append(el('div', {class:'item'},
+        el('span', {class:'ico', 'aria-hidden':'true', text: iconFor(x.text)}),
         el('div', {class:'t'}, el('b', {text:x.text}), el('div', {class:'chips'}, chipFor(m))),
-        el('div', {class:'qty'}, minus, el('span', {text: String(x.qty)}), plus), del));
+        el('div', {class:'qty'}, minus, num, kg ? el('small', {text:'ק״ג'}) : '', plus), del));
     });
     $('#l-empty').hidden = LIST.length > 0;
     const nf = CAT.length ? MATCHES.filter(m => !m.cands.length).length : 0;
