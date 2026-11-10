@@ -437,7 +437,9 @@ summary{cursor:pointer;font-weight:700}
   // ---------- search: forgiving, like a supermarket site ----------
   const FINAL = {'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
   function norm(t){
-    let x = (' ' + t + ' ').toLowerCase().replace(/[״"'׳`]/g, '').replace(/[ךםןףץ]/g, c => FINAL[c]).replace(/\s+/g, ' ');
+    let x = (' ' + t + ' ').toLowerCase().replace(/[״"'׳`]/g, '').replace(/[ךםןףץ]/g, c => FINAL[c])
+      .replace(/([\u05d0-\u05ea])(\d)/g, '$1 $2').replace(/(\d%?)([\u05d0-\u05ea])/g, '$1 $2').replace(/[+*]/g, ' ').replace(/\s+/g, ' ');
+    x = x.replace(/ (ללס|ללתס|ללא תס)(?= )/g, ' ללא סוכר').replace(/ ללג(?= )/g, ' ללא גלוטנ');
     x = x.replace(/ ל[\/.]ס\.?(?= )/g, ' ללא סוכר').replace(/ (ללא|בלי) תוספת סוכר(?= )/g, ' ללא סוכר')
          .replace(/ (בלי|נטול|נטולת|נטולי)(?= )/g, ' ללא').replace(/ דיאט(?= )/g, ' ללא סוכר');
     return x.replace(/[^א-תa-z0-9%.]+/g, ' ').replace(/\s+/g, ' ').trim();
