@@ -289,7 +289,12 @@ def load_previous(sid):
                 d = json.load(f)
             if sid not in d['stores']:
                 continue
-            when = datetime.datetime.strptime(d['updated'], '%Y-%m-%d %H:%M')
+            # how old this chain's prices really are (a catalog may itself carry a fallback copy)
+            asof = (d.get('asof') or {}).get(sid)
+            if not asof:
+                m = re.search(r'(?:local copy|previous catalog) from (\d{4}-\d\d-\d\d \d\d:\d\d)', (d.get('report') or {}).get(sid, ''))
+                asof = m.group(1) if m else d['updated']
+            when = datetime.datetime.strptime(asof, '%Y-%m-%d %H:%M')
             if NOW - when > datetime.timedelta(days=LOCAL_MAX_DAYS):
                 continue
             k = d['stores'].index(sid); P, R = {}, {}
@@ -300,14 +305,14 @@ def load_previous(sid):
                     if pr:
                         R[code] = [(pr[0], pr[0] * pr[1], bool(pr[2]) if len(pr) > 2 else False, '')]
             if P:
-                return d['updated'], P, R
+                return asof, P, R
         except Exception:
             continue
     return None
 
 
 def main():
-    P, R, report = {}, {}, {}
+    P, R, report, asof = {}, {}, {}, {}
     for sid, kind, p, meta in STORES:
         print('fetching', sid, '...', flush=True)
         try:
@@ -323,21 +328,24 @@ def main():
             P[sid] = parse_prices(files['price'])
             R[sid] = parse_promos(files['promo']) if 'promo' in files else {}
             report[sid] = f'{len(P[sid])} items'
+            asof[sid] = NOW.strftime('%Y-%m-%d %H:%M')
             print(' ', sid, report[sid], flush=True)
         except Exception as e:  # keep going with the other chains
             report[sid] = f'error: {type(e).__name__}: {e}'[:200]
             print(' ', sid, report[sid], flush=True)
-        if sid not in P:
-            d = load_local(sid)
+        if sid not in P:  # fall back to whichever saved copy is newer
+            d, prev = load_local(sid), load_previous(sid)
+            if d and prev and prev[0] > d['date']:
+                d = None
             if d:
                 P[sid] = d['P']; R[sid] = {c: [tuple(x) for x in v] for c, v in d['R'].items()}
                 report[sid] += f' -> local copy from {d["date"]} ({len(P[sid])} items)'
+                asof[sid] = d['date']
                 print(' ', sid, 'using local copy from', d['date'], flush=True)
-        if sid not in P:
-            prev = load_previous(sid)
-            if prev:
+            elif prev:
                 P[sid], R[sid] = prev[1], prev[2]
                 report[sid] += f' -> previous catalog from {prev[0]} ({len(P[sid])} items)'
+                asof[sid] = prev[0]
                 print(' ', sid, 'using previous catalog from', prev[0], flush=True)
     print(json.dumps(report, ensure_ascii=False, indent=1))
     meta_of = {sid: dict(meta, id=sid) for sid, kind, p, meta in STORES}
@@ -351,7 +359,7 @@ def main():
         items = build(P, R, ok)
         data = {'region': region, 'updated': NOW.strftime('%Y-%m-%d %H:%M'), 'stores': ok,
                 'meta': [meta_of[s] for s in ok], 'areas': cfg['areas'],
-                'report': {s: report.get(s, '') for s in cfg['stores']}, 'items': items}
+                'report': {s: report.get(s, '') for s in cfg['stores']}, 'asof': {s: asof[s] for s in ok}, 'items': items}
         with open(os.path.join(OUT, cfg['file']), 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
         written += 1
