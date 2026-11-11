@@ -1009,27 +1009,30 @@ summary{cursor:pointer;font-weight:700}
     const ta = el('textarea', {style:'position:fixed;top:-100px'}); ta.value = txt; document.body.append(ta); ta.select();
     let ok = false; try { ok = document.execCommand('copy'); } catch(e) {} ta.remove(); return Promise.resolve(ok);
   }
-  function orderBox(o, s, rows, checks){
+  // "רמי לוי ביתר עילית" → "רמי לוי אונליין": the branch's prices, ordered on the chain's online site
+  const onlineName = s => s.mode === 'store' ? s.name.replace(/ (ביתר עילית|בית שמש|היפר.*)$/, '').replace(/ היפר$/, '') + ' אונליין' : s.name;
+  function orderBox(o, s0, rows, checks){
+    const s = {...s0, name: onlineName(s0)};
     const qk = QUICK[s.id], left = rows.filter(r => !checks[keyOf(r.m.line.text)]);
     const box = el('div', {class:'order'});
-    box.append(el('b', {style:'font-size:16px', text: 'הזמנה ב' + s.name + (s.mode === 'store' ? ' אונליין' : '')}));
+    box.append(el('b', {style:'font-size:16px', text: 'הזמנה ב' + s.name}));
     if (qk) {
       box.append(el('div', {class:'small', text:'הכי מהיר: מעתיקים את כל הרשימה ומדביקים באתר הרשת. שלושה צעדים:'}),
         el('ol', {class:'steps'}, ...qk.steps.map(t => el('li', {text: t}))),
-        el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'1. העתקת הרשימה ופתיחת ' + s.name.replace(/ ביתר עילית| בית שמש/, ''), onclick: () => {
+        el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'1. העתקת הרשימה ופתיחת ' + s.name.replace(/ אונליין$/, ''), onclick: () => {
           const txt = rows.map(r => quickLine(s.id, r)).join('\n');
           const w = window.open(qk.url, 'hasal-shop');  // open first, inside the tap, so phones don't block it
           copyText(txt).then(ok => { if (!ok) { if (w) w.close(); prompt('העתיקו את הרשימה (לחיצה ארוכה ← העתקה), ואז פתחו את האתר:', txt); } else toast('הרשימה הועתקה. הדביקו אותה באתר שנפתח.'); });
         }}));
     } else box.append(el('div', {class:'small', text:'האתר של ' + s.name + ' לא מקבל רשימה מודבקת, אז נעבור יחד מוצר אחר מוצר: כל לחיצה פותחת את המוצר הבא באתר, מוסיפים לעגלה וחוזרים לכאן.'}));
-    box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s, rows)}),
+    box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s0, rows)}),
       el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}),
       howTo(s, !!qk));
     return box;
   }
   // the full walk-through, from the list to a booked delivery
   function howTo(s, quick){
-    const name = s.name.replace(/ ביתר עילית| בית שמש/, '');
+    const name = s.name.replace(/ אונליין$/, '');
     const steps = [
       ['לפני הכול', 'נכנסים פעם אחת לאתר ' + name + ' ומתחברים לחשבון (או נרשמים). הטלפון זוכר את ההתחברות לפעמים הבאות.'],
       ...(quick ? [
@@ -1047,7 +1050,8 @@ summary{cursor:pointer;font-weight:700}
     return el('details', {class:'howto'}, el('summary', {text:'הסבר מלא: הזמנה, מועד משלוח ותשלום'}),
       el('ol', {class:'steps'}, ...steps.map(([t, d]) => el('li', {}, el('b', {text: t + ': '}), d))));
   }
-  function openGuide(o, s, rows){
+  function openGuide(o, s0, rows){
+    const s = {...s0, name: onlineName(s0)};
     const checks = LS.json(checksKey(o), {});
     let i = rows.findIndex(r => !checks[keyOf(r.m.line.text)]); if (i < 0) i = 0;
     const done = () => rows.filter(r => checks[keyOf(r.m.line.text)]).length;
