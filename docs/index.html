@@ -693,7 +693,7 @@ summary{cursor:pointer;font-weight:700}
   function pic(code, text, small){
     const box = el('span', {class:'ico' + (small ? ' sm' : ''), 'aria-hidden':'true', text: iconFor(text)});
     if (SET.img === false || !realBarcode(code)) return box;
-    const img = new Image(); img.alt = ''; img.loading = 'lazy'; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
+    const img = new Image(); img.alt = ''; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';  // not lazy: a detached lazy image never loads
     let step = 0;
     img.onload = () => { if (img.naturalWidth > 8) { box.textContent = ''; box.append(img); } else img.onerror(); };
     img.onerror = () => { if (step++ > 0) return; offLookup(code).then(u => { if (u) img.src = u; }); };
