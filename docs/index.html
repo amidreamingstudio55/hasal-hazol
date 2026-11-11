@@ -512,7 +512,7 @@ summary{cursor:pointer;font-weight:700}
       const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
       const brand = w.some(x => x >= 6 && x < 99);  // a rare word such as a brand name: the product type does not matter as much
       const combo = !brand && / עמ | סלט | ממרח | פסטה | רוטב | כריכ | ארוחה /.test(n) && !/ עמ | סלט | ממרח | פסטה | רוטב /.test(qn);
-      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|וופל|קרמ|פודינג|טבלי|מוס|בראוני|ביסקוויט|ביסקוויטימ) /g) || []).some(w => !qn.includes(w));
+      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|וופל|קרמ|פודינג|טבלי|מוס|בראוני|ביסקוויט|ביסקוויטימ|ללא|לקטוז|לקטז|סויה|שקדימ|שיבולת) /g) || []).some(w => !qn.includes(w));
       score += got / total * 400 + hits * 60 + (n.startsWith(' ' + toks[0]) ? 150 : 0) + ps.length * 40 - (ps[Math.floor(ps.length/2)] || 100) * 0.3 - (combo ? 600 : 0) - (other ? 400 : 0);
       out.push({it, score, hits});
     }
