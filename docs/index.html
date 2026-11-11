@@ -64,6 +64,9 @@ label.rowi{cursor:pointer}
 .chip.bad{background:#fbe9e7;border-color:var(--bad);color:var(--bad)}
 .chip.plain{cursor:default}
 .chip.approx{background:#fff5e0;border-color:#d9a441;color:#7a4d00}
+.chip.more{background:#fff;border-style:dashed;color:var(--accent-dark)}
+.chip.il{background:#eef4ff;border-color:#9db7e6;color:#1f3f7a;cursor:default}
+.chip.il::before{content:"🇮🇱 "}
 .sugg{background:#fff;border:1px solid #c9d3cc;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.08);overflow:hidden;margin-top:-4px;display:flex;flex-direction:column}
 .sugg button{display:flex;align-items:center;gap:10px;justify-content:space-between;text-align:start;background:none;border:0;border-bottom:1px solid #eef1ef;padding:10px 14px;font:inherit;font-size:15px;color:inherit;cursor:pointer;min-height:48px}
 .sugg button:last-child{border-bottom:0}
@@ -459,6 +462,7 @@ summary{cursor:pointer;font-weight:700}
       .replace(/([\u05d0-\u05ea])(\d)/g, '$1 $2').replace(/(\d%?)([\u05d0-\u05ea])/g, '$1 $2').replace(/[+*]/g, ' ').replace(/\s+/g, ' ');
     x = x.replace(/ (ללס|ללתס|ללא תס)(?= )/g, ' ללא סוכר').replace(/ ללג(?= )/g, ' ללא גלוטנ');
     x = x.replace(/ (למריחה|מריחה|ממרחי)(?= )/g, ' ממרח');
+    x = x.replace(/ (תחתוניות|תחתוניה|תחתונית|פנטילינר|פנטי ליינר|ליינרימ)(?= )/g, ' מגנ תחתונ').replace(/ מגני תחתונימ(?= )/g, ' מגנ תחתונ').replace(/ (אולווייז|אולוויז|אולויז|אולוייז|אולווז)(?= )/g, ' always');
     x = x.replace(/ ל[\/.]ס\.?(?= )/g, ' ללא סוכר').replace(/ (ללא|בלי) תוספת סוכר(?= )/g, ' ללא סוכר')
          .replace(/ (בלי|נטול|נטולת|נטולי)(?= )/g, ' ללא').replace(/ דיאט(?= )/g, ' ללא סוכר');
     return x.replace(/[^א-תa-z0-9%.]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -489,20 +493,24 @@ summary{cursor:pointer;font-weight:700}
     if (!DF.has(tk)) { let c = 0; for (const it of CAT) if (nameN(it).includes(tk)) c++; DF.set(tk, c); }
     return Math.log(1 + CAT.length / (1 + DF.get(tk)));
   }
+  // words that describe the shopper, not the product
+  const STOP = new Set(['לנשימ','לאישה','לגברימ','לגבר','לילדימ','לילד','לבית','רגיל','רגילה','טוב','טובה','שלי','של']);
   function searchCat(text, strict, limit){
-    const toks = norm(text).split(' ').filter(t => t && t.length > 1);
+    const toks = norm(text).split(' ').filter(t => t && t.length > 1 && !STOP.has(t));
     if (!toks.length) return [];
-    const w = toks.map(rarity), total = w.reduce((a, b) => a + b, 0);
+    const w = toks.map(t => { const r = rarity(t); return (!strict && DF.get(t) === 0) ? 0 : r; }), total = w.reduce((a, b) => a + b, 0);
+    if (!total) return [];
     const qn = ' ' + toks.join(' ') + ' ';
     const out = [];
     for (const it of CAT) {
       const n = nameN(it);
       let hits = 0, got = 0, score = 0;
-      for (let i = 0; i < toks.length; i++) { const h = tokHit(toks.at(i), n); if (h) { hits++; got += w.at(i); score += h * 50 * w.at(i); } else if (strict) break; }
+      for (let i = 0; i < toks.length; i++) { if (!w.at(i)) continue; const h = tokHit(toks.at(i), n); if (h) { hits++; got += w.at(i); score += h * 50 * w.at(i); } else if (strict) break; }
       // strict: every word; forgiving: the words found carry at least half the query's weight
       if (strict ? hits < toks.length : (!hits || got < total * 0.5)) continue;
+      if (!strict && !got) continue;
       const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
-      const brand = w.some(x => x >= 6);  // a rare word such as a brand name: the product type does not matter as much
+      const brand = w.some(x => x >= 6 && x < 99);  // a rare word such as a brand name: the product type does not matter as much
       const combo = !brand && / עמ | סלט | ממרח | פסטה | רוטב | כריכ | ארוחה /.test(n) && !/ עמ | סלט | ממרח | פסטה | רוטב /.test(qn);
       const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|וופל|קרמ|פודינג|טבלי|מוס|בראוני|ביסקוויט|ביסקוויטימ) /g) || []).some(w => !qn.includes(w));
       score += got / total * 400 + hits * 60 + (n.startsWith(' ' + toks[0]) ? 150 : 0) + ps.length * 40 - (ps[Math.floor(ps.length/2)] || 100) * 0.3 - (combo ? 600 : 0) - (other ? 400 : 0);
@@ -517,7 +525,24 @@ summary{cursor:pointer;font-weight:700}
     if (q.startsWith('~')) {
       const alts = q.slice(1).split('|');
       const cands = CAT.filter(it => (it[3] === 1 || /1 ?ק"?ג|קג|\s1$/.test(it[1])) && alts.some(a => it[1].startsWith(a)) && !/אורגני|במשקל.*מלח|כבוש|חמוץ|מטוגן|שבבים|פסטרמה|מעושן|קפוא|נקניק|בגריל|מבושל|כבש/.test(it[1]));
-      return {line, mode:'fresh', cands, chosen:'auto', kg: kgPerUnit(line.text)};
+      const fm = {line, mode:'fresh', cands, chosen:'auto', kg: kgPerUnit(line.text)};
+      // packed versions too (a 1 kg bag, baby carrots...), so the shopper can pick one
+      const word = alts[0], fresh = new Set(cands);
+      const packs = searchCat(word, true, 40).map(x => x.it)
+        .filter(it => !fresh.has(it) && it[3] !== 1 && !/מיצ|מיץ|סלט|מרק|עוגה|עוגת|מחית|ממרח|חמוצ|כבוש|מוחמצ|רוטב|אבקת|תבלינ|קרקר|חטיפ|צ.?יפס|מטוגנ|מקלות|שבבי|בנזוגל|בייבי|פרוט|קוריאני|חתונה|קצוצ|מרוסק|קוביות|רסק|מקולפ|משומר|שימורי|יכין|זרעימ|זרעים|חמוץ|קורנישון|פיקנטי|מיובש|במלח|בחומצ|בחומץ|חתוכות|ספרינג|עיטור|לחות|סטיק|תחליב|סבונ|סבון|\d\s*(ל|ליטר|מל|מ"ל)(\s|$)/.test(it[1]) && norm(it[1]).startsWith(norm(word).slice(0, 3)))
+        .slice(0, 8);
+      // the fresh kinds themselves (loose, a packed bag...), each as its own choice
+      const seen = new Set(), kinds = cands.slice().sort((a, b) => b[4].filter(p => p > 0).length - a[4].filter(p => p > 0).length)
+        .filter(it => { const k = norm(it[1]); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 4);
+      packs.unshift(...kinds);
+      fm.fresh = cands; fm.packs = packs;
+      const c = CHOICES[keyOf(line.text)];
+      if (c && c !== 'cheapest' && c !== 'fresh') {
+        let i = packs.findIndex(it => it[0] === c);
+        if (i < 0) { const it = CAT.find(x => x[0] === c); if (it) { packs.unshift(it); i = 0; } }
+        if (i >= 0) return {line, mode:'pack', cands: packs, chosen: i, remembered: true, fresh: cands, packs, kg: fm.kg};
+      }
+      return fm;
     }
     if (q.startsWith('%')) {
       const re = new RegExp(q.slice(1));
@@ -529,7 +554,8 @@ summary{cursor:pointer;font-weight:700}
     let found = searchCat(q, true, 12), approx = false;
     if (!found.length) { found = searchCat(q, false, 12); approx = found.length > 0; }
     const cands = found.map(x => x.it);
-    return remember({line, mode:'pack', cands, chosen: cands.length ? 0 : -1, approx});
+    const missing = approx ? norm(q).split(' ').filter(t => t.length > 1 && DF.get(t) === 0) : [];
+    return remember({line, mode:'pack', cands, chosen: cands.length ? 0 : -1, approx, missing});
   }
   function remember(m){
     const c = CHOICES[keyOf(m.line.text)];
@@ -558,6 +584,13 @@ summary{cursor:pointer;font-weight:700}
 
   // ---------- optimizer ----------
   const active = () => STORES.map((s,k) => ({...s, k})).filter(s => SET.areas[s.area] !== false);
+  // where to buy a line that the chosen option's stores don't sell: the cheapest other store
+  function elsewhere(m, o){
+    let best = null;
+    active().forEach(s => { if (o.sub.some(x => x.id === s.id)) return; const p = linePrice(m, s.k); if (p && (!best || p.total < best.p.total)) best = {s, p}; });
+    return best;
+  }
+  const missText = (m, o) => { const e = elsewhere(m, o); return m.line.text + (e ? ' (יש ב' + e.s.name + ' · ' + fmt(e.p.total) + ' ₪)' : ' (לא נמכר באף רשת)'); };
   function compute(){
     ensureMatches();
     const act = active(), found = MATCHES.filter(m => m.cands.length);
@@ -569,7 +602,7 @@ summary{cursor:pointer;font-weight:700}
       found.forEach(m => {
         let best = null;
         sub.forEach(s => { const p = linePrice(m, s.k); if (p && (best == null || p.total < best.p.total - 1e-9 || (Math.abs(p.total-best.p.total) < 1e-9 && s.mode === 'delivery'))) best = {s, p}; });
-        if (!best) { missing++; miss.push(m.line.text); return; }
+        if (!best) { missing++; miss.push(m); return; }
         total += best.p.total; assign.get(best.s.id).push({m, p: best.p});
       });
       const used = sub.filter(s => assign.get(s.id).length);
@@ -600,7 +633,7 @@ summary{cursor:pointer;font-weight:700}
     // a single shop that lacks only one or two items can beat a split: say so
     const near = OPTIONS.filter(o => o.used.length === 1 && o.minOk && o.missing > REC.missing && o.missing - REC.missing <= 2 && o.total < REC.total).sort((a,b) => a.total - b.total)[0];
     if (near && REC.used.length === 2) {
-      const lack = near.miss.filter(t => !REC.miss.includes(t));
+      const lack = near.miss.filter(t => !REC.miss.includes(t)).map(m => m.line.text);
       NOTE += (NOTE ? ' ' : '') + 'אפשר גם רק ב' + near.used[0].name + ': ' + fmt(near.total) + ' ₪, אבל אין שם ' + lack.join(', ') + '.';
     }
   }
@@ -664,12 +697,20 @@ summary{cursor:pointer;font-weight:700}
   function chipFor(m){
     if (!CAT.length) return [];
     if (!m.cands.length) { const sr = socialRow(m); return [el('button', {type:'button', class:'chip bad', text:'לא נמצא · לתקן שם', onclick: () => openSheet(m)}), ...(sr ? [el('span', {class:'chip soc win', text:'יש בסופר החברתי · ' + fmt(sr.it.p) + ' ₪'})] : [])]; }
-    if (m.mode === 'fresh') return [el('span', {class:'chip plain', text:'במשקל · ' + (m.kg !== 1 ? '≈' + m.kg + ' ק״ג ליחידה · ' : 'כמות בק״ג · ') + 'הזול בכל רשת'})];
+    if (m.mode === 'fresh') {
+      const t = 'במשקל · ' + (m.kg !== 1 ? '≈' + m.kg + ' ק״ג ליחידה · ' : 'כמות בק״ג · ') + 'הזול בכל רשת';
+      if (!m.packs || !m.packs.length) return [el('span', {class:'chip plain', text: t})];
+      return [el('button', {type:'button', class:'chip' + (m.remembered ? ' mem' : ''), text: t, onclick: () => openSheet(m), 'aria-label': 'בחירת מוצר: ' + t}),
+              el('button', {type:'button', class:'chip more', text: 'או ארוז · ' + m.packs.length + ' אפשרויות', onclick: () => openSheet(m)})];
+    }
     const out = [];
     let txt, cls = 'chip';
     if (m.chosen === 'cheapest') { txt = m.variety ? 'הכי זול · ' + m.cands.length + ' סוגים' : 'הכי זול בכל רשת'; if (m.remembered) cls += ' mem'; }
     else { const it = m.cands[m.chosen]; txt = shortName(it[1]) + (m.remembered ? ' · נזכר' : ''); if (m.remembered) cls += ' mem'; else if (m.approx) { cls += ' approx'; txt = 'הכי קרוב: ' + txt; } }
     out.push(el('button', {type:'button', class: cls, text: txt, onclick: () => openSheet(m), 'aria-label': 'בחירת מוצר: ' + txt}));
+    const more = m.cands.length - 1 + (m.fresh && m.fresh.length ? 1 : 0);
+    if (more > 0 && m.chosen !== 'cheapest') out.push(el('button', {type:'button', class:'chip more', text: 'עוד ' + more + ' אפשרויות', onclick: () => openSheet(m)}));
+    if (m.chosen !== 'cheapest' && m.cands[m.chosen] && m.cands[m.chosen][6]) out.push(el('span', {class:'chip il', text:'תוצרת ישראל'}));
     if (STORES.some((s,k) => { const p = linePrice(m, k); return p && p.promo; })) out.push(el('span', {class:'chip promo', text:'מבצע'}));
     const sr = socialRow(m);
     if (sr) out.push(el('span', {class:'chip soc' + (sr.win ? ' win' : ''), title: sr.it.n, text: (sr.win ? 'זול יותר בסופר החברתי · ' : 'בסופר החברתי · ') + fmt(sr.it.p) + ' ₪' + (sr.it.max ? ' (עד ' + sr.it.max + ')' : '')}));
@@ -808,7 +849,8 @@ summary{cursor:pointer;font-weight:700}
   function openSheet(m){
     const key = keyOf(m.line.text);
     const nameIn = el('input', {type:'text', value: m.line.text, 'aria-label':'שם המוצר ברשימה', style:'height:46px;border:1px solid #c9d3cc;border-radius:12px;padding:0 12px;font-size:16px'});
-    let pick = m.chosen;
+    let pick = m.mode === 'fresh' ? 'fresh' : m.chosen;
+    const list = m.fresh ? (m.packs || []) : m.cands;
     const opts = el('div', {style:'display:flex;flex-direction:column;gap:8px'});
     const drawOpts = () => {
       opts.textContent = '';
@@ -817,10 +859,13 @@ summary{cursor:pointer;font-weight:700}
         const r = el('input', {type:'radio', name:'brandpick', checked: on, onchange: () => { pick = val; drawOpts(); }});
         return el('label', {class:'opt' + (on ? ' on' : '')}, r, el('span', {class:'t'}, el('b', {text:title}), sub ? el('small', {text:sub}) : null));
       };
-      if (m.cands.length) {
-        opts.append(mk('cheapest', 'הכי זול בכל רשת', m.variety ? 'כל אחד מ־' + m.cands.length + ' הסוגים שנמצאו, הזול בכל סופר' : 'כל מוצר מתאים, הזול בכל סופר'));
-        m.cands.forEach((it, i) => { const c = cheapestAt(it, m.line.qty); opts.append(mk(i, it[1] + (it[2] && it[2] !== '---' && it[2].length > 1 ? ' · ' + it[2] : ''), c ? 'החל מ־' + fmt(c.u) + ' ₪ ב' + c.s.name : 'לא נמכר ברשתות שבחרתם')); });
-      } else opts.append(el('p', {class:'small muted', style:'margin:0', text:'לא מצאנו מוצר בשם הזה במחירונים. נסו שם קצר או כללי יותר, למשל "טונה" במקום שם מלא של מותג.'}));
+      if (m.fresh && m.fresh.length) opts.append(mk('fresh', 'במשקל, בתפזורת', 'הזול בכל רשת · מחיר לק״ג'));
+      if (m.fresh && list.length) opts.append(el('div', {class:'small muted', style:'font-weight:600;margin-top:4px', text:'או ארוז:'}));
+      if (m.missing && m.missing.length) opts.append(el('p', {class:'small muted', style:'margin:0', text:'לא מצאנו במחירוני הרשתות: ' + m.missing.join(', ') + '. אלה המוצרים הקרובים ביותר:'}));
+      if (list.length) {
+        if (!m.fresh) opts.append(mk('cheapest', 'הכי זול בכל רשת', m.variety ? 'כל אחד מ־' + m.cands.length + ' הסוגים שנמצאו, הזול בכל סופר' : 'כל מוצר מתאים, הזול בכל סופר'));
+        list.forEach((it, i) => { const c = cheapestAt(it, m.line.qty); opts.append(mk(i, it[1] + (it[2] && it[2] !== '---' && it[2].length > 1 ? ' · ' + it[2] : '') + (it[6] ? ' · 🇮🇱 תוצרת ישראל' : ''), c ? 'החל מ־' + fmt(c.u) + ' ₪ ב' + c.s.name : 'לא נמכר ברשתות שבחרתם')); });
+      } else if (!(m.fresh && m.fresh.length)) opts.append(el('p', {class:'small muted', style:'margin:0', text:'לא מצאנו מוצר בשם הזה במחירונים. נסו שם קצר או כללי יותר, למשל "טונה" במקום שם מלא של מותג.'}));
     };
     drawOpts();
     const rem = el('input', {type:'checkbox', checked: true, style:'width:22px;height:22px;accent-color:#17624b;margin:0'});
@@ -828,6 +873,12 @@ summary{cursor:pointer;font-weight:700}
       const newName = nameIn.value.trim();
       if (newName && newName !== m.line.text) {
         const x = LIST.find(l => l === m.line); if (x) { x.text = newName; delete CHOICES[key]; saveChoices(); }
+      } else if (m.fresh && pick !== -1) {  // loose by weight, or one of the packed versions
+        if (rem.checked) { CHOICES[key] = pick === 'fresh' ? 'fresh' : list[pick][0]; saveChoices(); }
+        else { delete CHOICES[key]; saveChoices();
+          const nm = pick === 'fresh' ? {line: m.line, mode:'fresh', cands: m.fresh, chosen:'auto', kg: m.kg, fresh: m.fresh, packs: list}
+                                      : {line: m.line, mode:'pack', cands: list, chosen: pick, fresh: m.fresh, packs: list, kg: m.kg};
+          closeSheet(); saveList(); dirty = false; MATCHES = MATCHES.map(x => x === m ? nm : x); renderList(); return; }
       } else if (m.cands.length && pick !== -1) {
         if (rem.checked) { CHOICES[key] = pick === 'cheapest' ? 'cheapest' : m.cands[pick][0]; saveChoices(); }
         else { delete CHOICES[key]; saveChoices(); }
@@ -839,7 +890,7 @@ summary{cursor:pointer;font-weight:700}
       el('div', {style:'display:flex;flex-direction:column;gap:2px'}, el('span', {class:'small muted', style:'font-weight:600', text:'איזה מוצר לקנות?'}), el('h2', {text: m.line.text + (m.line.qty !== 1 ? ' × ' + m.line.qty : '')})),
       el('label', {class:'field', style:'font-weight:600'}, 'שם המוצר ברשימה', nameIn),
       opts,
-      m.cands.length ? el('label', {style:'display:flex;align-items:center;gap:10px;font-size:15px;padding:4px 2px'}, rem, 'לזכור את הבחירה לפעם הבאה') : null,
+      (list.length || m.fresh) ? el('label', {style:'display:flex;align-items:center;gap:10px;font-size:15px;padding:4px 2px'}, rem, 'לזכור את הבחירה לפעם הבאה') : null,
       el('div', {class:'btnrow'}, save, el('button', {type:'button', class:'ghostbtn', text:'ביטול', onclick: closeSheet})));
   }
   function openPaste(){
@@ -881,7 +932,8 @@ summary{cursor:pointer;font-weight:700}
       const d = x.total - REC.total;
       const extra = [];
       if (x === REC) extra.push(el('span', {class:'small', style:'color:#17624b;font-weight:800', text:'ההמלצה'}));
-      if (x.missing) extra.push(el('span', {class:'small', style:'color:#9b2c22;font-weight:700', text:'חסרים ' + x.missing}));
+      if (x.missing) extra.push(el('span', {class:'small', style:'color:#9b2c22;font-weight:700', text:(x.missing === 1 ? 'חסר: ' : 'חסרים ' + x.missing + ': ') + x.miss.map(m => m.line.text).join(', ')}),
+                                el('span', {class:'small muted', text: x.miss.map(m => { const e = elsewhere(m, x); return e ? m.line.text + ' – להשלים ב' + e.s.name + ' (' + fmt(e.p.total) + ' ₪)' : m.line.text + ' – לא נמכר באף רשת'; }).join(' · ')}));
       if (!x.minOk) extra.push(el('span', {class:'small', style:'color:#8a5a00;font-weight:700', text:'מתחת למינימום הזמנה'}));
       box.append(el('button', {type:'button', class:'alt' + (x === o ? ' sel' : ''), 'aria-pressed': x === o ? 'true' : 'false', onclick: () => { SEL = x; renderResults(); }},
         el('span', {class:'t'}, el('b', {style:'font-size:16px', text: optName(x)}), el('span', {class:'small muted', text: optMode(x)}), ...extra),
@@ -969,6 +1021,17 @@ summary{cursor:pointer;font-weight:700}
           const txt = 'מילוי עגלה ב' + s.name + ' – הסל הזול (ברקוד | כמות | מוצר):\n' + lines.join('\n');
           (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('הרשימה הועתקה. הדביקו אותה בשיחה עם Claude.'), () => { prompt('העתיקו את הרשימה:', txt); });
         }})));
+    }
+    // lines this option can't supply: tick them off here too, and see where to get them
+    if (o.miss && o.miss.length && STORE_TAB === o.used.length - 1) {
+      box.append(el('h3', {style:'margin:12px 2px 2px;font-size:14px;color:#9b2c22', text:'חסר כאן – להשלים במקום אחר'}));
+      o.miss.forEach(m => {
+        const k = keyOf(m.line.text), on = !!checks[k], e = elsewhere(m, o);
+        const cb = el('input', {type:'checkbox', checked: on, onchange: () => { checks[k] = cb.checked; LS.set(checksKey(o), JSON.stringify(checks)); renderStore(); }});
+        box.append(el('label', {class:'srow'}, cb, pic(e && m.mode === 'pack' ? e.p.it[0] : null, m.line.text, true),
+          el('span', {class:'n'}, (m.line.qty !== 1 ? m.line.qty + ' × ' : '') + (e ? e.p.it[1] : m.line.text), el('br'), el('small', {class:'muted', text: e ? 'להשלים ב' + e.s.name : 'לא נמכר באף רשת שבחרתם'})),
+          el('span', {class:'pr', text: e ? fmt(e.p.total) + ' ₪' : '—'})));
+      });
     }
     const missing = MATCHES.filter(m => !m.cands.length);
     if (missing.length && STORE_TAB === 0) box.append(el('p', {class:'small muted', text:'לא נמצאו במחירונים: ' + missing.map(m => m.line.text).join(', ')}));

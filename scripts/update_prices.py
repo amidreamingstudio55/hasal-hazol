@@ -176,7 +176,7 @@ def parse_prices(raw):
             p = float(txt(it, 'ItemPrice'))
         except ValueError:
             continue
-        out[txt(it, 'ItemCode')] = {'name': txt(it, 'ItemName'), 'mfr': txt(it, 'ManufactureName'), 'w': txt(it, 'bIsWeighted'), 'price': p}
+        out[txt(it, 'ItemCode')] = {'name': txt(it, 'ItemName'), 'mfr': txt(it, 'ManufactureName'), 'w': txt(it, 'bIsWeighted'), 'cn': txt(it, 'ManufactureCountry') or txt(it, 'ManufacturerCountry'), 'price': p}
     return out
 
 
@@ -254,6 +254,9 @@ def load_local(sid):
     return d
 
 
+ISRAEL = re.compile(r'ישראל|^\s*(il|isr|israel)\s*$', re.I)
+
+
 def build(P, R, ok):
     cnt = Counter(c for s in ok for c in P[s])
     keep = list(cnt)  # every product, also those sold in one chain only, so search finds what people ask for
@@ -262,6 +265,7 @@ def build(P, R, ok):
         names = [P[s][c]['name'] for s in ok if c in P[s]]
         src = next(P[s][c] for s in ok if c in P[s])
         w = 1 if any(P[s].get(c, {}).get('w') == '1' for s in ok) else 0
+        il = 1 if any(ISRAEL.search(P[s][c].get('cn') or '') for s in ok if c in P[s]) else 0  # made in Israel, as the chain reports it
         prices, promos = [], []
         for s in ok:
             if c not in P[s]:
@@ -274,7 +278,7 @@ def build(P, R, ok):
                 if price * 0.3 < u < price * 0.98 and (best is None or u < best[1]):
                     best = (round(mq or 1, 2), round(u, 3), 1 if club else 0)  # 1 = club-only (the site can switch it off)
             prices.append(round(price, 2)); promos.append(list(best) if best else 0)
-        items.append([c, re.sub(r'\s+', ' ', max(names, key=len)).strip(), (src['mfr'] or '').strip()[:20], w, prices, promos])
+        items.append([c, re.sub(r'\s+', ' ', max(names, key=len)).strip(), (src['mfr'] or '').strip()[:20], w, prices, promos, il])
     return items
 
 
@@ -298,9 +302,9 @@ def load_previous(sid):
             if NOW - when > datetime.timedelta(days=LOCAL_MAX_DAYS):
                 continue
             k = d['stores'].index(sid); P, R = {}, {}
-            for code, name, mfr, w, prices, promos in d['items']:
+            for code, name, mfr, w, prices, promos, *rest in d['items']:
                 if prices[k] > 0:
-                    P[code] = {'name': name, 'mfr': mfr, 'w': str(w), 'price': prices[k]}
+                    P[code] = {'name': name, 'mfr': mfr, 'w': str(w), 'cn': 'IL' if rest and rest[0] else '', 'price': prices[k]}
                     pr = promos[k]
                     if pr:
                         R[code] = [(pr[0], pr[0] * pr[1], bool(pr[2]) if len(pr) > 2 else False, '')]
