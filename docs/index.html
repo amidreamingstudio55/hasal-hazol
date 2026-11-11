@@ -110,6 +110,8 @@ label.rowi{cursor:pointer}
 .alt .p b{font-size:17px;font-variant-numeric:tabular-nums}
 .diff{font-size:13px;color:var(--bad);font-weight:700}
 .order{display:flex;flex-direction:column;gap:8px;background:#fff;border:2px solid var(--accent);border-radius:14px;padding:12px}
+.howto summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent-dark);padding:4px 0}
+.howto .steps{margin-top:6px;gap:6px}
 .order .steps{margin:0;padding-inline-start:20px;font-size:14px;display:flex;flex-direction:column;gap:2px}
 .note{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--accent-dark)}
 .tabs{display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto}
@@ -1021,8 +1023,29 @@ summary{cursor:pointer;font-weight:700}
         }}));
     } else box.append(el('div', {class:'small', text:'האתר של ' + s.name + ' לא מקבל רשימה מודבקת, אז נעבור יחד מוצר אחר מוצר: כל לחיצה פותחת את המוצר הבא באתר, מוסיפים לעגלה וחוזרים לכאן.'}));
     box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s, rows)}),
-      el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}));
+      el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}),
+      howTo(s, !!qk));
     return box;
+  }
+  // the full walk-through, from the list to a booked delivery
+  function howTo(s, quick){
+    const name = s.name.replace(/ ביתר עילית| בית שמש/, '');
+    const steps = [
+      ['לפני הכול', 'נכנסים פעם אחת לאתר ' + name + ' ומתחברים לחשבון (או נרשמים). הטלפון זוכר את ההתחברות לפעמים הבאות.'],
+      ...(quick ? [
+        ['העתקת הרשימה', 'כאן לוחצים "1. העתקת הרשימה ופתיחת ' + name + '". הרשימה מועתקת והאתר נפתח בלשונית חדשה.'],
+        ['הדבקה באתר', s.id === 'SH' ? 'בעמוד "הזמנה מהירה" לוחצים לחיצה ארוכה בתיבה ובוחרים "הדבקה", ואז "צרו לי רשימה".' : 'לוחצים "קניה מהירה" בראש האתר, לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך".'],
+        ['בדיקת המוצרים', s.id === 'SH' ? 'עוברים על הרשימה שהאתר מצא: אם מוצר לא נכון לוחצים "החלפה", ומתקנים כמויות ב־+ / −. בסוף לוחצים "הוספה לסל".' : 'לכל שורה האתר מציג מוצרים: לוחצים + על המתאים, מתקנים כמות, ועוברים ל"הבא" עד סוף הרשימה.'],
+        ['מה שלא נמצא', 'מוצר שהאתר לא זיהה אפשר להוסיף כאן ב"מילוי מוצר אחר מוצר", שפותח אותו ישר באתר.']
+      ] : [
+        ['מוצר אחר מוצר', 'כאן לוחצים "מילוי מוצר אחר מוצר". לכל מוצר לוחצים "פתיחה ב' + name + '", מוסיפים לעגלה בכמות שמופיעה, חוזרים לכאן ולוחצים "✓ נוסף – הבא".']
+      ]),
+      ['מועד משלוח', 'באתר ' + name + ' פותחים את העגלה (סמל העגלה למעלה), לוחצים "לתשלום" או "המשך", ובוחרים יום ושעה למשלוח. כדאי לבדוק שהכתובת נכונה.'],
+      ['תשלום', 'מזינים אמצעי תשלום באתר הרשת עצמו ומאשרים את ההזמנה. הסל הזול לא רואה את פרטי התשלום ולא מבצע את ההזמנה.'],
+      ['אחרי ההזמנה', 'המחיר הסופי נקבע בליקוט (מוצרים במשקל ומבצעים), ועשוי להיות מעט שונה מהמחיר כאן. נשמח לשמוע מה היה שונה.']
+    ];
+    return el('details', {class:'howto'}, el('summary', {text:'הסבר מלא: הזמנה, מועד משלוח ותשלום'}),
+      el('ol', {class:'steps'}, ...steps.map(([t, d]) => el('li', {}, el('b', {text: t + ': '}), d))));
   }
   function openGuide(o, s, rows){
     const checks = LS.json(checksKey(o), {});
