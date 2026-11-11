@@ -109,6 +109,8 @@ label.rowi{cursor:pointer}
 .alt .p{display:flex;flex-direction:column;align-items:flex-start;flex:none}
 .alt .p b{font-size:17px;font-variant-numeric:tabular-nums}
 .diff{font-size:13px;color:var(--bad);font-weight:700}
+.order{display:flex;flex-direction:column;gap:8px;background:#fff;border:2px solid var(--accent);border-radius:14px;padding:12px}
+.order .steps{margin:0;padding-inline-start:20px;font-size:14px;display:flex;flex-direction:column;gap:2px}
 .note{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--accent-dark)}
 .tabs{display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto}
 .tabs button{height:40px;border-radius:999px;border:1px solid #c9d3cc;background:#fff;padding:0 14px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -986,6 +988,75 @@ summary{cursor:pointer;font-weight:700}
   // ---------- 4 · in the store ----------
   let STORE_TAB = 0;
   const checksKey = o => 'checks:' + o.id;
+  // ---------- ordering online from the phone ----------
+  // chains whose site takes a whole pasted list (tested 11/2026)
+  const QUICK = {
+    SH: {url: 'https://www.shufersal.co.il/online/he/quick-buy?isWishLists=false', steps: ['באתר שנפתח לוחצים לחיצה ארוכה בתיבה ← "הדבקה"', 'לוחצים "צרו לי רשימה"', 'בודקים את המוצרים והכמויות (אפשר "החלפה") ולוחצים "הוספה לסל"']},
+    RL: {url: 'https://www.rami-levy.co.il/he', steps: ['באתר שנפתח לוחצים "קניה מהירה" (למעלה)', 'לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך"', 'לכל שורה בוחרים מוצר ו־+ ועוברים ל"הבא"']}
+  };
+  QUICK.RR = QUICK.RL;
+  const isOldIL = c => /^72900000\d{5}$/.test(c);
+  // a short-barcode (imported) product is found exactly by its barcode; Israeli 729 codes by name
+  const quickLine = (sid, r) => {
+    const it = r.p.it, q = r.m.mode === 'fresh' ? Math.max(1, Math.round(r.m.line.qty)) : r.m.line.qty;
+    const what = (sid === 'SH' && isBarcode(it[0]) && !it[0].startsWith('729') && it[3] !== 1) ? it[0] : it[1].replace(/\s+/g, ' ').trim();
+    return (q !== 1 ? q + ' ' : '') + what;
+  };
+  function copyText(txt){
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(txt).then(() => true, () => false);
+    const ta = el('textarea', {style:'position:fixed;top:-100px'}); ta.value = txt; document.body.append(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch(e) {} ta.remove(); return Promise.resolve(ok);
+  }
+  function orderBox(o, s, rows, checks){
+    const qk = QUICK[s.id], left = rows.filter(r => !checks[keyOf(r.m.line.text)]);
+    const box = el('div', {class:'order'});
+    box.append(el('b', {style:'font-size:16px', text: 'הזמנה ב' + s.name + (s.mode === 'store' ? ' אונליין' : '')}));
+    if (qk) {
+      box.append(el('div', {class:'small', text:'הכי מהיר: מעתיקים את כל הרשימה ומדביקים באתר הרשת. שלושה צעדים:'}),
+        el('ol', {class:'steps'}, ...qk.steps.map(t => el('li', {text: t}))),
+        el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'1. העתקת הרשימה ופתיחת ' + s.name.replace(/ ביתר עילית| בית שמש/, ''), onclick: () => {
+          const txt = rows.map(r => quickLine(s.id, r)).join('\n');
+          const w = window.open(qk.url, 'hasal-shop');  // open first, inside the tap, so phones don't block it
+          copyText(txt).then(ok => { if (!ok) { if (w) w.close(); prompt('העתיקו את הרשימה (לחיצה ארוכה ← העתקה), ואז פתחו את האתר:', txt); } else toast('הרשימה הועתקה. הדביקו אותה באתר שנפתח.'); });
+        }}));
+    } else box.append(el('div', {class:'small', text:'האתר של ' + s.name + ' לא מקבל רשימה מודבקת, אז נעבור יחד מוצר אחר מוצר: כל לחיצה פותחת את המוצר הבא באתר, מוסיפים לעגלה וחוזרים לכאן.'}));
+    box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s, rows)}),
+      el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}));
+    return box;
+  }
+  function openGuide(o, s, rows){
+    const checks = LS.json(checksKey(o), {});
+    let i = rows.findIndex(r => !checks[keyOf(r.m.line.text)]); if (i < 0) i = 0;
+    const done = () => rows.filter(r => checks[keyOf(r.m.line.text)]).length;
+    const save = () => LS.set(checksKey(o), JSON.stringify(checks));
+    const draw = () => {
+      if (i >= rows.length) {
+        showSheet('סיום מילוי העגלה', el('h2', {text: 'כל המוצרים עברו ✓'}),
+          el('p', {style:'margin:0', text: done() + ' מתוך ' + rows.length + ' סומנו בעגלה. עכשיו באתר ' + s.name + ': פותחים את העגלה, בודקים, בוחרים מועד משלוח ומשלמים.'}),
+          el('a', {class:'cta', style:'height:52px;font-size:17px', href: SITE[s.id], target:'hasal-shop', text: 'לעגלה ולבחירת מועד ב' + s.name}),
+          el('button', {type:'button', class:'ghostbtn', text:'סגירה', onclick: () => { closeSheet(); renderStore(); }}));
+        return;
+      }
+      const r = rows[i], k = keyOf(r.m.line.text), it = r.p.it;
+      const qty = r.m.mode === 'fresh' ? '≈' + +(r.m.line.qty * r.m.kg).toFixed(2) + ' ק״ג' : r.m.line.qty + (isKg(r.m) ? ' ק״ג' : ' יח׳');
+      const url = SHOP_LINK[s.id](shopQuery(it));
+      showSheet('מילוי עגלה: ' + it[1],
+        el('div', {style:'display:flex;justify-content:space-between;font-weight:700;font-size:14px'}, el('span', {text: 'מוצר ' + (i + 1) + ' מתוך ' + rows.length}), el('span', {class:'muted', text: done() + ' בעגלה'})),
+        el('div', {class:'prog'}, el('div', {style:'width:' + Math.round(i / rows.length * 100) + '%'})),
+        el('div', {style:'display:flex;gap:12px;align-items:center'}, pic(r.m.mode === 'pack' ? it[0] : null, r.m.line.text),
+          el('div', {style:'display:flex;flex-direction:column;gap:2px;min-width:0'}, el('b', {style:'font-size:18px', text: it[1]}),
+            el('span', {style:'font-size:16px', text: 'כמות: ' + qty + ' · ' + fmt(r.p.total) + ' ₪'}), checks[k] ? el('span', {class:'small', style:'color:#17624b;font-weight:700', text:'כבר סומן בעגלה ✓'}) : null)),
+        el('a', {class:'cta', style:'height:54px;font-size:18px', href: url, target:'hasal-shop', rel:'noopener', text: 'פתיחה ב' + s.name + ' ↗'}),
+        el('div', {class:'small muted', text:'מוסיפים לעגלה באתר (בכמות שלמעלה) וחוזרים לכאן.'}),
+        el('div', {class:'btnrow'},
+          el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'✓ נוסף – הבא', onclick: () => { checks[k] = true; save(); i++; draw(); }}),
+          el('button', {type:'button', class:'ghostbtn', text:'דילוג', onclick: () => { i++; draw(); }})),
+        el('div', {style:'display:flex;justify-content:space-between'},
+          i > 0 ? el('button', {type:'button', class:'link', text:'→ הקודם', onclick: () => { i--; draw(); }}) : el('span'),
+          el('button', {type:'button', class:'link', text:'סגירה', onclick: () => { closeSheet(); renderStore(); }})));
+    };
+    draw();
+  }
   function renderStore(){
     const o = SEL || REC; if (!o) return go('results');
     const checks = LS.json(checksKey(o), {});
@@ -1013,15 +1084,7 @@ summary{cursor:pointer;font-weight:700}
     });
     if (!SHOP_LINK[s.id] && SITE[s.id]) box.prepend(el('div', {class:'note'},
       el('div', {text: s.mode === 'delivery' ? 'ההזמנה עצמה נעשית באתר ' + s.name + '. סמנו כאן מה כבר בעגלה.' : 'הרשימה מסודרת לפי מחלקות בחנות. סמנו מה כבר בעגלה.'}), siteBtn(s)));
-    if (SHOP_LINK[s.id]) {
-      box.prepend(el('div', {class:'note'}, siteBtn(s),
-        el('div', {text:(s.mode === 'store' ? 'אפשר להזמין גם ברמי לוי אונליין (המחירים שם עשויים להיות מעט שונים מהסניף). ' : 'הזמנה ב' + s.name + ': ') + 'לחצו "לאתר" ליד כל מוצר, או העתיקו את רשימת ההזמנה ושלחו אותה ל־Claude, שימלא את העגלה בחשבון שלכם ויעצור לפני התשלום.'}),
-        el('button', {type:'button', class:'link', text:'העתקת רשימת ההזמנה למילוי עגלה', onclick: () => {
-          const lines = rows.map(r => shopQuery(r.p.it) + ' | ' + r.m.line.qty + ' | ' + r.p.it[1]);
-          const txt = 'מילוי עגלה ב' + s.name + ' – הסל הזול (ברקוד | כמות | מוצר):\n' + lines.join('\n');
-          (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => toast('הרשימה הועתקה. הדביקו אותה בשיחה עם Claude.'), () => { prompt('העתיקו את הרשימה:', txt); });
-        }})));
-    }
+    if (SHOP_LINK[s.id]) box.prepend(orderBox(o, s, rows, checks));
     // lines this option can't supply: tick them off here too, and see where to get them
     if (o.miss && o.miss.length && STORE_TAB === o.used.length - 1) {
       box.append(el('h3', {style:'margin:12px 2px 2px;font-size:14px;color:#9b2c22', text:'חסר כאן – להשלים במקום אחר'}));
