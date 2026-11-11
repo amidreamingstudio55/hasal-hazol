@@ -458,6 +458,7 @@ summary{cursor:pointer;font-weight:700}
     let x = (' ' + t + ' ').toLowerCase().replace(/[״"'׳`]/g, '').replace(/[ךםןףץ]/g, c => FINAL[c])
       .replace(/([\u05d0-\u05ea])(\d)/g, '$1 $2').replace(/(\d%?)([\u05d0-\u05ea])/g, '$1 $2').replace(/[+*]/g, ' ').replace(/\s+/g, ' ');
     x = x.replace(/ (ללס|ללתס|ללא תס)(?= )/g, ' ללא סוכר').replace(/ ללג(?= )/g, ' ללא גלוטנ');
+    x = x.replace(/ (למריחה|מריחה|ממרחי)(?= )/g, ' ממרח');
     x = x.replace(/ ל[\/.]ס\.?(?= )/g, ' ללא סוכר').replace(/ (ללא|בלי) תוספת סוכר(?= )/g, ' ללא סוכר')
          .replace(/ (בלי|נטול|נטולת|נטולי)(?= )/g, ' ללא').replace(/ דיאט(?= )/g, ' ללא סוכר');
     return x.replace(/[^א-תa-z0-9%.]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -482,21 +483,29 @@ summary{cursor:pointer;font-weight:700}
     return 0;
   }
   // rank catalog items for a free-text query; strict = every word must match
+  // how rare a word is in the catalogue: a brand ("נוטלה") counts for more than a common word ("שוקולד")
+  const DF = new Map();
+  function rarity(tk){
+    if (!DF.has(tk)) { let c = 0; for (const it of CAT) if (nameN(it).includes(tk)) c++; DF.set(tk, c); }
+    return Math.log(1 + CAT.length / (1 + DF.get(tk)));
+  }
   function searchCat(text, strict, limit){
     const toks = norm(text).split(' ').filter(t => t && t.length > 1);
     if (!toks.length) return [];
-    const need = strict ? toks.length : Math.max(1, Math.ceil(toks.length * 0.6));
+    const w = toks.map(rarity), total = w.reduce((a, b) => a + b, 0);
     const qn = ' ' + toks.join(' ') + ' ';
     const out = [];
     for (const it of CAT) {
       const n = nameN(it);
-      let hits = 0, score = 0, miss = 0;
-      for (const tk of toks) { const h = tokHit(tk, n); if (h) { hits++; score += h * 50; } else if (++miss > toks.length - need) break; }
-      if (hits < need) continue;
+      let hits = 0, got = 0, score = 0;
+      for (let i = 0; i < toks.length; i++) { const h = tokHit(toks.at(i), n); if (h) { hits++; got += w.at(i); score += h * 50 * w.at(i); } else if (strict) break; }
+      // strict: every word; forgiving: the words found carry at least half the query's weight
+      if (strict ? hits < toks.length : (!hits || got < total * 0.5)) continue;
       const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
-      const combo = / עמ | סלט | ממרח | פסטה | רוטב | כריכ | ארוחה /.test(n) && !/ עמ | סלט | ממרח | פסטה | רוטב /.test(qn);
-      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|קרמ|פודינג|טבלי|מוס|בראוני) /g) || []).some(w => !qn.includes(w));
-      score += hits * 120 + (n.startsWith(' ' + toks[0]) ? 150 : 0) + ps.length * 40 - (ps[Math.floor(ps.length/2)] || 100) * 0.3 - (combo ? 600 : 0) - (other ? 400 : 0);
+      const brand = w.some(x => x >= 6);  // a rare word such as a brand name: the product type does not matter as much
+      const combo = !brand && / עמ | סלט | ממרח | פסטה | רוטב | כריכ | ארוחה /.test(n) && !/ עמ | סלט | ממרח | פסטה | רוטב /.test(qn);
+      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|וופל|קרמ|פודינג|טבלי|מוס|בראוני|ביסקוויט|ביסקוויטימ) /g) || []).some(w => !qn.includes(w));
+      score += got / total * 400 + hits * 60 + (n.startsWith(' ' + toks[0]) ? 150 : 0) + ps.length * 40 - (ps[Math.floor(ps.length/2)] || 100) * 0.3 - (combo ? 600 : 0) - (other ? 400 : 0);
       out.push({it, score, hits});
     }
     out.sort((a,b) => b.score - a.score);
