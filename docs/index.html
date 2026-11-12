@@ -152,6 +152,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .fb{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
 .fbrow{display:flex;gap:8px;flex-wrap:wrap}
 .fbrow .chip{flex:1;justify-content:center}
+.howcard{background:var(--panel);border:2px solid var(--accent);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.howcard h2{margin:0;font-size:20px;font-weight:800}
+.howcard ol{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:8px;font-size:17px;line-height:1.5}
 .qtyrem{background:var(--hi-soft);color:var(--hi-soft-ink);border-radius:14px;padding:10px 14px;font-size:16px}
 .qtyrem ul{margin:6px 0 0;padding-inline-start:20px;display:flex;flex-direction:column;gap:2px}
 .order .steps{margin:0;padding-inline-start:22px;font-size:16px;display:flex;flex-direction:column;gap:4px}
@@ -228,11 +231,21 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
 <section class="view" id="v-list" hidden aria-labelledby="list-h">
   <div class="bar">
     <div class="grow"><h1 id="list-h">הסל הזול</h1><span class="sub" id="l-sub">טוען מחירים…</span></div>
+    <button class="iconbtn" id="l-help" type="button" aria-label="איך זה עובד"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17v.01"></path></svg></button>
     <button class="iconbtn" id="l-share" type="button" aria-label="שליחת הרשימה בווטסאפ"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg></button>
     <button class="iconbtn" id="l-settings" type="button" aria-label="הגדרות"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"></path></svg></button>
   </div>
   <ol class="steps3" aria-label="שלבים"><li aria-current="step">1. רשימה</li><li>2. השוואה</li><li>3. הזמנה</li></ol>
   <div class="body">
+    <section class="howcard" id="l-how" hidden aria-labelledby="l-how-h">
+      <h2 id="l-how-h">איך זה עובד? 3 צעדים</h2>
+      <ol>
+        <li><b>רשימה:</b> מוסיפים מוצרים (הקלדה, או הדבקה מווטסאפ) ומתקנים כמויות.</li>
+        <li><b>השוואה:</b> לוחצים "מצאו לי את הסל הזול" ורואים איפה הכי משתלם, כולל משלוח.</li>
+        <li><b>הזמנה:</b> לוחצים "לרשימת הקנייה". שם כתוב בדיוק מה לעשות באתר של הסופר. מועד המשלוח והתשלום – באתר הסופר.</li>
+      </ol>
+      <div class="btnrow"><button type="button" class="cta" id="l-how-ok" style="min-height:48px;font-size:17px">הבנתי, מתחילים</button></div>
+    </section>
     <div class="banner" id="shared-banner" hidden><span>נטענה רשימה ששותפה איתך.</span><button type="button" class="link" id="shared-undo">חזרה לרשימה הקודמת שלי</button></div>
     <div class="banner" id="install-banner" hidden><span>אפשר להוסיף את הסל הזול למסך הבית ולפתוח אותו כמו אפליקציה.</span><button type="button" class="link" id="install-btn">הוספה למסך הבית</button></div>
     <div class="search">
@@ -931,6 +944,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   });
   $('#l-go').addEventListener('click', () => { compute(); SEL = REC; go('results'); });
   $('#l-settings').addEventListener('click', () => go('settings'));
+  // short how-to: shown on the first visit, and from the ? button any time
+  const how = $('#l-how');
+  if (!LS.get('how-seen')) how.hidden = false;
+  $('#l-how-ok').addEventListener('click', () => { how.hidden = true; LS.set('how-seen', '1'); $('#l-add').focus(); });
+  $('#l-help').addEventListener('click', () => { how.hidden = !how.hidden; if (!how.hidden) { how.scrollIntoView({block:'start'}); $('#l-how-ok').focus(); } });
   $('#l-share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));
   $('#l-paste').addEventListener('click', openPaste);
   $('#l-clear').addEventListener('click', () => {
