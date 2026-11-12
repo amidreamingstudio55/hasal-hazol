@@ -109,6 +109,9 @@ label.rowi{cursor:pointer}
 .alt .p{display:flex;flex-direction:column;align-items:flex-start;flex:none}
 .alt .p b{font-size:17px;font-variant-numeric:tabular-nums}
 .diff{font-size:13px;color:var(--bad);font-weight:700}
+.alt .dl{color:#5b5b5b}
+.alt .dl.ok{color:#17624b;font-weight:600}
+#r-deliv[hidden]{display:none!important}
 .order{display:flex;flex-direction:column;gap:8px;background:#fff;border:2px solid var(--accent);border-radius:14px;padding:12px}
 .howto summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent-dark);padding:4px 0}
 .howto .steps{margin-top:6px;gap:6px}
@@ -226,6 +229,7 @@ summary{cursor:pointer;font-weight:700}
       <span class="small muted" style="font-size:14px" id="r-why"></span>
       <button class="cta" id="r-go" type="button" style="height:52px;font-size:18px;margin-top:4px">לרשימת הקנייה</button>
       <div id="r-sites" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div class="note" id="r-deliv" hidden style="display:flex;flex-direction:column;gap:4px"></div>
     </div>
     <div class="note" id="r-note" hidden></div>
     <div class="note" id="r-social" hidden></div>
@@ -642,6 +646,30 @@ summary{cursor:pointer;font-weight:700}
     }
   }
   const optName = o => o.used.map(s => s.name).join(' + ');
+  // home delivery for a store, by what we checked for the shopper's town
+  const ONLINE = {SH:'שופרסל', SD:'שופרסל', CO:'קרפור', CB:'קרפור', CR:'קרפור', RL:'רמי לוי', RR:'רמי לוי', VI:'ויקטורי', HH:'חצי חינם', TO:'טיב טעם', YO:'יוחננוף', YR:'יוחננוף', OA:'אושר עד', OR:'אושר עד', KT:'קשת', KR:'קשת'};
+  function delivFor(s){
+    const town = TOWNS[SET.city], chain = ONLINE[s.id];
+    if (!town || !chain) return null;
+    const r = town.deliv.find(x => x[1].startsWith(chain));
+    if (!r) return null;
+    const fee = +((r[2].match(/משלוח ([\d.]+)/) || [])[1] || (s.mode === 'delivery' ? s.fee : 0));
+    return {st: r[0], name: r[1].replace(/ אונליין$/, '') + ' אונליין', note: r[2], fee};
+  }
+  // one line per shop on the option card: how the shopping gets home
+  function delivLines(o){
+    return o.used.map(s => {
+      const d = delivFor(s), sub = o.assign.get(s.id).reduce((a, x) => a + x.p.total, 0);
+      const pre = o.used.length > 1 ? s.name + ': ' : '';
+      if (s.mode === 'delivery') {
+        const min = s.min && sub < s.min ? ' · חסרים ' + fmt(s.min - sub) + ' ₪ למינימום' : (s.min ? ' · מינימום ' + s.min + ' ₪ ✓' : '');
+        return {ok: true, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'משלוח עד הבית ל' + SET.city) + ' · ' + fmt(s.fee) + ' ₪' + min};
+      }
+      if (d && d.st === 'ok') return {ok: true, t: '🚚 ' + pre + 'אפשר גם משלוח דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '')};
+      if (d && d.st === 'no') return {ok: false, t: '🏬 ' + pre + d.name.replace(/ אונליין$/, '') + ' לא משלחת ל' + SET.city + ' · קנייה בסניף'};
+      return {ok: false, t: '🏬 ' + pre + 'קנייה בסניף · אין משלוח מהסניף הזה'};
+    });
+  }
   function optMode(o){
     if (o.used.length === 2) return (o.used.every(s => s.mode === 'store') ? 'שתי נסיעות לסניפים' : o.used.map(s => s.mode === 'store' ? 'סניף' : 'משלוח').join(' + ')) + (o.fees ? ' · כולל ' + fmt(o.fees) + ' ₪ משלוח' : '');
     const s = o.used[0];
@@ -938,11 +966,17 @@ summary{cursor:pointer;font-weight:700}
       if (x === REC) extra.push(el('span', {class:'small', style:'color:#17624b;font-weight:800', text:'ההמלצה'}));
       if (x.missing) extra.push(el('span', {class:'small', style:'color:#9b2c22;font-weight:700', text:(x.missing === 1 ? 'חסר: ' : 'חסרים ' + x.missing + ': ') + x.miss.map(m => m.line.text).join(', ')}),
                                 el('span', {class:'small muted', text: x.miss.map(m => { const e = elsewhere(m, x); return e ? m.line.text + ' – להשלים ב' + e.s.name + ' (' + fmt(e.p.total) + ' ₪)' : m.line.text + ' – לא נמכר באף רשת'; }).join(' · ')}));
+      delivLines(x).forEach(l => extra.push(el('span', {class:'small dl' + (l.ok ? ' ok' : ''), text: l.t})));
       if (!x.minOk) extra.push(el('span', {class:'small', style:'color:#8a5a00;font-weight:700', text:'מתחת למינימום הזמנה'}));
       box.append(el('button', {type:'button', class:'alt' + (x === o ? ' sel' : ''), 'aria-pressed': x === o ? 'true' : 'false', onclick: () => { SEL = x; renderResults(); }},
         el('span', {class:'t'}, el('b', {style:'font-size:16px', text: optName(x)}), el('span', {class:'small muted', text: optMode(x)}), ...extra),
         el('span', {class:'p'}, el('b', {text: fmt(x.total) + ' ₪'}), x === REC ? null : el('span', {class:'diff', text: (d >= 0 ? '+' : '−') + fmt(Math.abs(d))}))));
     });
+    // delivery times aren't published: they show up at checkout on the chain's site
+    const dl = delivLines(o).filter(l => l.ok);
+    $('#r-deliv').textContent = ''; $('#r-deliv').hidden = !dl.length;
+    if (dl.length) $('#r-deliv').append(el('b', {text:'משלוח לבחירה שלכם'}), ...dl.map(l => el('div', {text: l.t})),
+      el('div', {class:'small muted', text:'מועדי המשלוח הפנויים מוצגים באתר הרשת בשלב סיום ההזמנה, לפי הכתובת. הרשתות לא מפרסמות אותם מראש, ולכן אין לנו דרך להציג אותם כאן.'}));
     renderSocial(o);
     renderTable();
     const weighed = MATCHES.some(m => m.mode === 'fresh' && m.cands.length);
