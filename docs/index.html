@@ -101,7 +101,8 @@ label.rowi{cursor:pointer}
 .ico.sm{width:44px;height:44px;font-size:24px;border-radius:12px}
 .item{background:var(--panel);border-radius:var(--r);border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
 .item .irow{display:flex;align-items:flex-start;gap:12px}
-.item .irow2{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+.item .irow2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.item .irow2>.qty{margin-inline-start:auto}
 .item .t{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
 .item .t b{font-size:19px;font-weight:800;line-height:1.25}
 .item .chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -110,7 +111,7 @@ label.rowi{cursor:pointer}
 .search{display:flex;gap:8px}
 .search form{flex:1;display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--edge);border-radius:16px;padding:0 6px 0 14px;height:56px}
 .search form:focus-within{border-color:var(--accent)}
-.search input{border:0;outline:0;font-size:18px;flex:1;background:transparent;min-width:0}
+.search input{border:0;outline:0;font-size:18px;flex:1;background:transparent;min-width:0;height:100%}
 .search .add{height:44px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:800;padding:0 14px;cursor:pointer}
 .sq{width:56px;height:56px;border-radius:16px;border:2px solid var(--edge);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);flex:none}
 .muted{color:var(--muted)}
@@ -855,10 +856,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       const plus = el('button', {type:'button', 'aria-label':'הוספת ' + x.text, 'data-q': i + '+', text:'+', onclick: () => setQ(x.qty + step, '+')});
       const num = el('input', {type:'number', inputmode: kg ? 'decimal' : 'numeric', step: String(step), min: kg ? '0.1' : '1', value: String(x.qty), 'aria-label':'כמות ' + x.text + (kg ? ' בק״ג' : ''),
         onchange: e => { const v = parseFloat(String(e.target.value).replace(',', '.')); if (v > 0) setQ(v); else e.target.value = x.qty; }, onfocus: e => e.target.select()});
+      const chips = [chipFor(m)].flat().filter(Boolean);
       const del = el('button', {type:'button', class:'del', 'aria-label':'מחיקת ' + x.text, onclick: () => { LIST.splice(i, 1); saveList(); renderList(); }}); del.innerHTML = ICON.x;
       box.append(el('div', {class:'item'},
-        el('div', {class:'irow'}, pic(lineCode(m), x.text), el('div', {class:'t'}, el('b', {text:x.text}), el('div', {class:'chips'}, chipFor(m))), del),
-        el('div', {class:'irow2'}, el('div', {class:'qty', role:'group', 'aria-label':'כמות ' + x.text}, minus, num, kg ? el('small', {text:'ק״ג'}) : '', plus))));
+        el('div', {class:'irow'}, pic(lineCode(m), x.text), el('div', {class:'t'}, el('b', {text:x.text}), el('div', {class:'chips'}, chips.filter(c => !c.classList.contains('more')))), del),
+        el('div', {class:'irow2'}, ...chips.filter(c => c.classList.contains('more')), el('div', {class:'qty', role:'group', 'aria-label':'כמות ' + x.text}, minus, num, kg ? el('small', {text:'ק״ג'}) : '', plus))));
     });
     $('#l-empty').hidden = LIST.length > 0;
     const nf = CAT.length ? MATCHES.filter(m => !m.cands.length).length : 0;
