@@ -115,6 +115,8 @@ label.rowi{cursor:pointer}
 /* small phones and big text: let rows wrap instead of running off the screen */
 @media (max-width:360px){.body{padding:12px}.bar{padding:12px}.bar h1{font-size:21px}.search .add{padding:0 10px}.sq{width:48px}.best .total{font-size:34px}.item .irow{gap:8px}.ico{width:48px;height:48px}}
 @media (min-width:600px){.app,.sheet{max-width:560px}.app{box-shadow:0 0 0 1px var(--line)}}
+/* phone on its side: give the list the height, let the header scroll away */
+@media (max-height:500px) and (orientation:landscape){.bar{position:static}.steps3{padding-block:6px 8px}.foot{padding-block:8px}.cta{min-height:48px}}
 /* notch and home bar on phones; keep the phone's own text size setting */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .bar{padding-top:calc(14px + env(safe-area-inset-top));padding-inline:calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-left))}
