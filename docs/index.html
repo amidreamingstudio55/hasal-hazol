@@ -149,6 +149,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .order{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:2px solid var(--accent);border-radius:var(--r);padding:16px}
 .howto summary{cursor:pointer;font-weight:700;font-size:16px;color:var(--accent-dark);padding:8px 0;min-height:44px}
 .howto .steps{margin-top:6px;gap:8px}
+.qtyrem{background:var(--hi-soft);color:var(--hi-soft-ink);border-radius:14px;padding:10px 14px;font-size:16px}
+.qtyrem ul{margin:6px 0 0;padding-inline-start:20px;display:flex;flex-direction:column;gap:2px}
 .order .steps{margin:0;padding-inline-start:22px;font-size:16px;display:flex;flex-direction:column;gap:4px}
 .note{background:var(--accent-soft);border-radius:16px;padding:12px 14px;font-size:16px;color:var(--accent-dark)}
 .tabs{display:flex;gap:6px;padding:10px 16px 0;overflow-x:auto}
@@ -478,7 +480,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   // a quiet live region for screen readers
   const LIVE = el('div', {'aria-live':'polite', style:'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)'}); document.body.append(LIVE);
   function announce(t){ LIVE.textContent = ''; setTimeout(() => { LIVE.textContent = t; }, 50); }
-  function toast(msg){ const t = el('div', {class:'toast', role:'status', text: msg}); document.body.append(t); setTimeout(() => t.remove(), 2600); }
+  function toast(msg){ const t = el('div', {class:'toast', role:'status', text: msg}); document.body.append(t); setTimeout(() => t.remove(), 5000); }
   const ICON = {
     ok: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8a4a2b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="כן"><path d="M5 12l5 5 9-10"/></svg>',
     no: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a33a2b" stroke-width="2.5" stroke-linecap="round" role="img" aria-label="לא"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -1113,16 +1115,18 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   // ---------- ordering online from the phone ----------
   // chains whose site takes a whole pasted list (tested 11/2026)
   const QUICK = {
-    SH: {url: 'https://www.shufersal.co.il/online/he/quick-buy?isWishLists=false', steps: ['באתר שנפתח לוחצים לחיצה ארוכה בתיבה ← "הדבקה"', 'לוחצים "צרו לי רשימה"', 'בודקים את המוצרים והכמויות (אפשר "החלפה") ולוחצים "הוספה לסל"']},
-    RL: {url: 'https://www.rami-levy.co.il/he', steps: ['באתר שנפתח לוחצים "קניה מהירה" (למעלה)', 'לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך"', 'לכל שורה בוחרים מוצר ו־+ ועוברים ל"הבא"']}
+    SH: {url: 'https://www.shufersal.co.il/online/he/quick-buy?isWishLists=false', steps: ['באתר שנפתח לוחצים לחיצה ארוכה בתיבה ← "הדבקה"', 'לוחצים "צרו לי רשימה"', 'בודקים את המוצרים, מתקנים כמויות ב־+ (האתר מתחיל ב־1) ולוחצים "הוספה לסל"']},
+    RL: {url: 'https://www.rami-levy.co.il/he', steps: ['באתר שנפתח לוחצים "קניה מהירה" (למעלה)', 'לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך"', 'לכל שורה לוחצים + על המוצר כמספר הפעמים שבכמות ועוברים ל"הבא"']}
   };
   QUICK.RR = QUICK.RL;
   const isOldIL = c => /^72900000\d{5}$/.test(c);
   // a short-barcode (imported) product is found exactly by its barcode; Israeli 729 codes by name
   const quickLine = (sid, r) => {
     const it = r.p.it, q = r.m.mode === 'fresh' ? Math.max(1, Math.round(r.m.line.qty)) : r.m.line.qty;
-    const what = (sid === 'SH' && isBarcode(it[0]) && !it[0].startsWith('729') && it[3] !== 1) ? it[0] : it[1].replace(/\s+/g, ' ').trim();
-    return (q !== 1 ? q + ' ' : '') + what;
+    const bar = sid === 'SH' && isBarcode(it[0]) && !it[0].startsWith('729') && it[3] !== 1;
+    // the chains' quick buy ignores amounts (always 1); the number in front just shows on the line as a reminder.
+    // Shufersal finds a barcode only when it stands alone, so barcode lines go without it.
+    return (q !== 1 && !bar ? q + ' ' : '') + (bar ? it[0] : it[1].replace(/\s+/g, ' ').trim());
   };
   function copyText(txt){
     if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(txt).then(() => true, () => false);
@@ -1142,8 +1146,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
         el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'1. העתקת הרשימה ופתיחת ' + s.name.replace(/ אונליין$/, ''), onclick: () => {
           const txt = rows.map(r => quickLine(s.id, r)).join('\n');
           const w = window.open(qk.url, 'hasal-shop');  // open first, inside the tap, so phones don't block it
-          copyText(txt).then(ok => { if (!ok) { if (w) w.close(); prompt('העתיקו את הרשימה (לחיצה ארוכה ← העתקה), ואז פתחו את האתר:', txt); } else toast('הרשימה הועתקה. הדביקו אותה באתר שנפתח.'); });
+          copyText(txt).then(ok => { if (!ok) { if (w) w.close(); prompt('העתיקו את הרשימה (לחיצה ארוכה ← העתקה), ואז פתחו את האתר:', txt); } else toast('הרשימה הועתקה ✓ באתר שנפתח: לחיצה ארוכה בתיבה ← "הדבקה"'); });
         }}));
+      const many = rows.filter(r => r.m.line.qty !== 1);
+      if (many.length) box.append(el('div', {class:'qtyrem'}, el('b', {text:'כמויות לעדכן באתר (שם הכול מתחיל ב־1):'}),
+        el('ul', {}, ...many.map(r => el('li', {}, el('b', {text: (r.m.mode === 'fresh' ? '≈' + +(r.m.line.qty * r.m.kg).toFixed(2) + ' ק״ג' : isKg(r.m) ? r.m.line.qty + ' ק״ג' : r.m.line.qty + ' יח׳')}), ' ' + r.p.it[1])))));
     } else box.append(el('div', {class:'small', text:'האתר של ' + s.name + ' לא מקבל רשימה מודבקת, אז נעבור יחד מוצר אחר מוצר: כל לחיצה פותחת את המוצר הבא באתר, מוסיפים לעגלה וחוזרים לכאן.'}));
     box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s0, rows)}),
       el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}),
