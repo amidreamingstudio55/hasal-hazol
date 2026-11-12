@@ -667,9 +667,9 @@ summary{cursor:pointer;font-weight:700}
       const pre = o.used.length > 1 ? s.name + ': ' : '';
       if (s.mode === 'delivery') {
         const min = s.min && sub < s.min ? ' · חסרים ' + fmt(s.min - sub) + ' ₪ למינימום' : (s.min ? ' · מינימום ' + s.min + ' ₪ ✓' : '');
-        return {ok: true, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'משלוח עד הבית ל' + SET.city) + ' · ' + fmt(s.fee) + ' ₪' + min};
+        return {ok: !(d && d.st === 'q'), site: s.id, name: s.name, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'יש משלוח עד הבית ל' + SET.city + ' ✓') + ' · ' + fmt(s.fee) + ' ₪' + min};
       }
-      if (d && d.st === 'ok') return {ok: true, t: '🚚 ' + pre + 'אפשר גם משלוח דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '')};
+      if (d && d.st === 'ok') return {ok: true, site: ({CB:'CO', CR:'CO', RR:'RL', SD:'SH'})[s.id] || s.id, name: d.name, t: '🚚 ' + pre + 'יש משלוח ל' + SET.city + ' ✓ דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '')};
       if (d && d.st === 'no') return {ok: false, t: '🏬 ' + pre + d.name.replace(/ אונליין$/, '') + ' לא משלחת ל' + SET.city + ' · קנייה בסניף'};
       return {ok: false, t: '🏬 ' + pre + 'קנייה בסניף · משלוח מהרשת הזו עוד לא נבדק'};
     });
@@ -979,8 +979,13 @@ summary{cursor:pointer;font-weight:700}
     // delivery times aren't published: they show up at checkout on the chain's site
     const dl = delivLines(o).filter(l => l.ok);
     $('#r-deliv').textContent = ''; $('#r-deliv').hidden = !dl.length;
-    if (dl.length) $('#r-deliv').append(el('b', {text:'משלוח לבחירה שלכם'}), ...dl.map(l => el('div', {text: l.t})),
-      el('div', {class:'small muted', text:'מועדי המשלוח הפנויים מוצגים באתר הרשת בשלב סיום ההזמנה, לפי הכתובת. הרשתות לא מפרסמות אותם מראש, ולכן אין לנו דרך להציג אותם כאן.'}));
+    // where on each chain's site the free delivery slots are shown (checked 11/2026)
+    const SLOTS = {SH:'באתר לוחצים למעלה "בחירת זמן משלוח"', CO:'באתר לוחצים למעלה "משלוח" ← "מועדי משלוח"', RL:'המועדים הפנויים נפתחים באתר אחרי שמוסיפים את המוצר הראשון לסל', VI:'המועדים מוצגים באתר בשלב סיום ההזמנה'};
+    if (dl.length) $('#r-deliv').append(el('b', {text:'משלוח זמין לבחירה שלכם'}),
+      ...dl.map(l => el('div', {style:'display:flex;flex-direction:column;gap:4px'}, el('span', {text: l.t}),
+        SITE[l.site] ? el('a', {class:'chip', style:'height:42px;padding:0 14px;display:inline-flex;align-items:center;align-self:flex-start;text-decoration:none;font-weight:700', href: SITE[l.site], target:'hasal-shop', rel:'noopener', text:'לצפייה במועדי המשלוח ב' + l.name + ' ↗'}) : null,
+        SLOTS[l.site] ? el('span', {class:'small muted', text: SLOTS[l.site] + '. צריך להיות מחוברים לחשבון.'}) : null)),
+      el('div', {class:'small muted', text:'הרשתות לא מפרסמות את המועדים הפנויים מחוץ לאתר שלהן, ולכן הם לא מוצגים כאן.'}));
     renderSocial(o);
     renderTable();
     const weighed = MATCHES.some(m => m.mode === 'fresh' && m.cands.length);
