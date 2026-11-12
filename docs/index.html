@@ -149,6 +149,9 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .order{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:2px solid var(--accent);border-radius:var(--r);padding:16px}
 .howto summary{cursor:pointer;font-weight:700;font-size:16px;color:var(--accent-dark);padding:8px 0;min-height:44px}
 .howto .steps{margin-top:6px;gap:8px}
+.fb{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.fbrow{display:flex;gap:8px;flex-wrap:wrap}
+.fbrow .chip{flex:1;justify-content:center}
 .qtyrem{background:var(--hi-soft);color:var(--hi-soft-ink);border-radius:14px;padding:10px 14px;font-size:16px}
 .qtyrem ul{margin:6px 0 0;padding-inline-start:20px;display:flex;flex-direction:column;gap:2px}
 .order .steps{margin:0;padding-inline-start:22px;font-size:16px;display:flex;flex-direction:column;gap:4px}
@@ -1154,7 +1157,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     } else box.append(el('div', {class:'small', text:'האתר של ' + s.name + ' לא מקבל רשימה מודבקת, אז נעבור יחד מוצר אחר מוצר: כל לחיצה פותחת את המוצר הבא באתר, מוסיפים לעגלה וחוזרים לכאן.'}));
     box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s0, rows)}),
       el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}),
-      howTo(s, !!qk));
+      howTo(s, !!qk), feedback(s, rows));
     return box;
   }
   // the full walk-through, from the list to a booked delivery
@@ -1177,6 +1180,18 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     return el('details', {class:'howto'}, el('summary', {text:'הסבר מלא: הזמנה, מועד משלוח ותשלום'}),
       el('ol', {class:'steps'}, ...steps.map(([t, d]) => el('li', {}, el('b', {text: t + ': '}), d))));
   }
+  // pilot feedback: one tap opens a ready WhatsApp message to the pilot manager (no server, nothing stored)
+  const FEEDBACK_WA = '972506276306';
+  function feedback(s, rows){
+    const send = ans => {
+      const txt = 'משוב על ההזמנה בהסל הזול\nרשת: ' + s.name + '\nמוצרים: ' + rows.length + '\nהתהליך היה: ' + ans + '\nמה היה קשה / מה לשפר: ';
+      window.open('https://wa.me/' + FEEDBACK_WA + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+    };
+    return el('div', {class:'fb', role:'group', 'aria-label':'משוב על התהליך'},
+      el('b', {text:'סיימתם להזמין? איך היה התהליך?'}),
+      el('div', {class:'fbrow'}, ...['קל', 'בסדר', 'מסורבל'].map(a => el('button', {type:'button', class:'chip', text: a, onclick: () => send(a)}))),
+      el('span', {class:'small muted', text:'נפתחת הודעת ווטסאפ מוכנה למשה. אפשר להוסיף בה מה היה קשה.'}));
+  }
   function openGuide(o, s0, rows){
     const s = {...s0, name: onlineName(s0)};
     const checks = LS.json(checksKey(o), {});
@@ -1188,6 +1203,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
         showSheet('סיום מילוי העגלה', el('h2', {text: 'כל המוצרים עברו ✓'}),
           el('p', {style:'margin:0', text: done() + ' מתוך ' + rows.length + ' סומנו בעגלה. עכשיו באתר ' + s.name + ': פותחים את העגלה, בודקים, בוחרים מועד משלוח ומשלמים.'}),
           el('a', {class:'cta', style:'height:52px;font-size:17px', href: SITE[s.id], target:'hasal-shop', text: 'לעגלה ולבחירת מועד ב' + s.name}),
+          feedback(s, rows),
           el('button', {type:'button', class:'ghostbtn', text:'סגירה', onclick: () => { closeSheet(); renderStore(); }}));
         return;
       }
