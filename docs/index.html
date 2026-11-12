@@ -403,6 +403,10 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     CO: q => 'https://www.carrefour.co.il/search/' + encodeURIComponent(q),
     CB: q => 'https://www.carrefour.co.il/search/' + encodeURIComponent(q),
     CR: q => 'https://www.carrefour.co.il/search/' + encodeURIComponent(q),
+    // Keshet Teamim and Tiv Taam run on the same shop platform as Carrefour (/search/<words>), checked 11/2026
+    KT: q => 'https://www.keshet-teamim.co.il/search/' + encodeURIComponent(q),
+    KR: q => 'https://www.keshet-teamim.co.il/search/' + encodeURIComponent(q),
+    TO: q => 'https://www.tivtaam.co.il/search/' + encodeURIComponent(q),
     // Rami Levy's prices come from its stores; the link opens Rami Levy Online, where prices can differ slightly
     RL: q => 'https://www.rami-levy.co.il/he/online/search?q=' + encodeURIComponent(q),
     RR: q => 'https://www.rami-levy.co.il/he/online/search?q=' + encodeURIComponent(q)
@@ -1142,7 +1146,10 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   }
   // "רמי לוי ביתר עילית" → "רמי לוי אונליין": the branch's prices, ordered on the chain's online site
   const onlineName = s => s.mode === 'store' ? s.name.replace(/ (ביתר עילית|בית שמש|היפר.*)$/, '').replace(/ היפר$/, '') + ' אונליין' : s.name;
+  // chains whose website has no online shop at all (checked 11/2026)
+  const NO_ONLINE = {OA:1, OR:1};
   function orderBox(o, s0, rows, checks){
+    if (NO_ONLINE[s0.id]) return el('div', {class:'note'}, el('b', {text: s0.name.replace(/ (ביתר עילית|ראשון לציון).*$/, '') + ' לא מוכרת אונליין.'}), el('div', {text:'קונים בסניף לפי הרשימה למטה, מסודרת לפי מחלקות. מסמנים כל מוצר שנכנס לעגלה.'}));
     const s = {...s0, name: onlineName(s0)};
     const qk = QUICK[s.id], left = rows.filter(r => !checks[keyOf(r.m.line.text)]);
     const box = el('div', {class:'order'});
@@ -1160,10 +1167,6 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
         el('ul', {}, ...many.map(r => el('li', {}, el('b', {text: (r.m.mode === 'fresh' ? '≈' + +(r.m.line.qty * r.m.kg).toFixed(2) + ' ק״ג' : isKg(r.m) ? r.m.line.qty + ' ק״ג' : r.m.line.qty + ' יח׳')}), ' ' + r.p.it[1])))));
     } else box.append(
       SHOP_LINK[s.id] ? null : el('div', {class:'small', text: s.mode === 'store' ? 'אפשר לקנות בסניף לפי הרשימה למטה (מסודרת לפי מחלקות), או להזמין באתר הרשת. לא בדקנו אם היא משלחת לישוב שלכם.' : ''}),
-      el('button', {type:'button', class:'ghostbtn', text:'העתקת כל הרשימה ופתיחת האתר', onclick: () => {
-        const txt = rows.map(r => (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1]).join('\n');
-        window.open(SITE[s.id], 'hasal-shop'); copyText(txt).then(ok => toast(ok ? 'הרשימה הועתקה ✓ אפשר להדביק אותה בפתק או בחיפוש באתר' : 'לא הצלחנו להעתיק'));
-      }}),
       el('div', {class:'small', text:'האתר של ' + s.name + ' לא מקבל רשימה מודבקת, אז נעבור יחד מוצר אחר מוצר: כל לחיצה פותחת את המוצר הבא באתר, מוסיפים לעגלה וחוזרים לכאן.'}));
     box.append(el('button', {type:'button', class: qk ? 'ghostbtn' : 'cta', style:'height:48px;font-size:16px', text: (qk ? 'או: ' : '') + 'מילוי מוצר אחר מוצר' + (left.length < rows.length ? ' (נשארו ' + left.length + ')' : ''), onclick: () => openGuide(o, s0, rows)}),
       el('div', {class:'small muted', text:'בסוף בוחרים מועד משלוח ומשלמים באתר הרשת. בפעם הראשונה צריך להתחבר שם לחשבון, והטלפון זוכר.'}),
