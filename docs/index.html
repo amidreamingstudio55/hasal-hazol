@@ -231,6 +231,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
 <section class="view" id="v-list" hidden aria-labelledby="list-h">
   <div class="bar">
     <div class="grow"><h1 id="list-h">הסל הזול</h1><span class="sub" id="l-sub">טוען מחירים…</span></div>
+    <button class="iconbtn" id="l-install" type="button" aria-label="התקנה בנייד" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"></rect><path d="M12 7v7M9 11l3 3 3-3M10.5 18.5h3"></path></svg></button>
     <button class="iconbtn" id="l-help" type="button" aria-label="איך זה עובד"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7M12 17v.01"></path></svg></button>
     <button class="iconbtn" id="l-share" type="button" aria-label="שליחת הרשימה בווטסאפ"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg></button>
     <button class="iconbtn" id="l-settings" type="button" aria-label="הגדרות"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"></path></svg></button>
@@ -244,10 +245,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
         <li><b>השוואה:</b> לוחצים "מצאו לי את הסל הזול" ורואים איפה הכי משתלם, כולל משלוח.</li>
         <li><b>הזמנה:</b> לוחצים "לרשימת הקנייה". שם כתוב בדיוק מה לעשות באתר של הסופר. מועד המשלוח והתשלום – באתר הסופר.</li>
       </ol>
+      <p style="margin:0;font-size:16px">להתקנה בטלפון כמו אפליקציה: כפתור הטלפון <span aria-hidden="true">📲</span> למעלה.</p>
       <div class="btnrow"><button type="button" class="cta" id="l-how-ok" style="min-height:48px;font-size:17px">הבנתי, מתחילים</button></div>
     </section>
     <div class="banner" id="shared-banner" hidden><span>נטענה רשימה ששותפה איתך.</span><button type="button" class="link" id="shared-undo">חזרה לרשימה הקודמת שלי</button></div>
-    <div class="banner" id="install-banner" hidden><span>אפשר להוסיף את הסל הזול למסך הבית ולפתוח אותו כמו אפליקציה.</span><button type="button" class="link" id="install-btn">הוספה למסך הבית</button></div>
+    <div class="banner" id="install-banner" hidden><span>אפשר להתקין את הסל הזול בטלפון ולפתוח אותו כמו אפליקציה.</span><button type="button" class="link" id="install-btn">איך מתקינים</button><button type="button" class="link" id="install-x">לא עכשיו</button></div>
     <div class="search">
       <form id="l-addform" role="search">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#635850" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
@@ -1143,7 +1145,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   // chains whose site takes a whole pasted list (tested 11/2026)
   const QUICK = {
     SH: {url: 'https://www.shufersal.co.il/online/he/quick-buy?isWishLists=false', steps: ['באתר שנפתח לוחצים לחיצה ארוכה בתיבה ← "הדבקה"', 'לוחצים "צרו לי רשימה"', 'בודקים את המוצרים, מתקנים כמויות ב־+ (האתר מתחיל ב־1) ולוחצים "הוספה לסל"']},
-    RL: {url: 'https://www.rami-levy.co.il/he', steps: ['באתר שנפתח לוחצים "קניה מהירה" (למעלה)', 'לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך"', 'לכל שורה לוחצים + על המוצר כמספר הפעמים שבכמות ועוברים ל"הבא"']}
+    RL: {url: 'https://www.rami-levy.co.il/he', steps: ['באתר שנפתח לוחצים "קניה מהירה" (למעלה)', 'לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך"', 'לכל שורה לוחצים + על המוצר המתאים (כמה פעמים כמו הכמות), ורק אז "הבא"'], warn: 'רמי לוי לא מוסיף לבד: ליד כל מוצר הכמות מתחילה ב־0. אם לוחצים רק "הבא" בלי +, הסל נשאר ריק.'}
   };
   QUICK.RR = QUICK.RL;
   const isOldIL = c => /^72900000\d{5}$/.test(c);
@@ -1175,10 +1177,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     if (qk) {
       box.append(el('div', {class:'small', text:'הכי מהיר: מעתיקים את כל הרשימה ומדביקים באתר הרשת. שלושה צעדים:'}),
         el('ol', {class:'steps'}, ...qk.steps.map(t => el('li', {text: t}))),
+        qk.warn ? el('div', {class:'note', role:'note', style:'border:2px solid var(--accent)'}, el('b', {text:'⚠️ חשוב: '}), qk.warn) : null,
         el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'1. העתקת הרשימה ופתיחת ' + s.name.replace(/ אונליין$/, ''), onclick: () => {
           const txt = rows.map(r => quickLine(s.id, r)).join('\n');
           const w = window.open(qk.url, 'hasal-shop');  // open first, inside the tap, so phones don't block it
-          copyText(txt).then(ok => { if (!ok) { if (w) w.close(); prompt('העתיקו את הרשימה (לחיצה ארוכה ← העתקה), ואז פתחו את האתר:', txt); } else toast('הרשימה הועתקה ✓ באתר שנפתח: לחיצה ארוכה בתיבה ← "הדבקה"'); });
+          copyText(txt).then(ok => { if (!ok) { if (w) w.close(); prompt('העתיקו את הרשימה (לחיצה ארוכה ← העתקה), ואז פתחו את האתר:', txt); } else toast(qk.warn ? 'הרשימה הועתקה ✓ באתר: "קניה מהירה" ← הדבקה ← "המשך". בכל מוצר לוחצים +, ורק אז "הבא"' : 'הרשימה הועתקה ✓ באתר שנפתח: לחיצה ארוכה בתיבה ← "הדבקה"'); });
         }}));
       const many = rows.filter(r => r.m.line.qty !== 1);
       if (many.length) box.append(el('div', {class:'qtyrem'}, el('b', {text:'כמויות לעדכן באתר (שם הכול מתחיל ב־1):'}),
@@ -1199,7 +1202,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       ...(quick ? [
         ['העתקת הרשימה', 'כאן לוחצים "1. העתקת הרשימה ופתיחת ' + name + '". הרשימה מועתקת והאתר נפתח בלשונית חדשה.'],
         ['הדבקה באתר', s.id === 'SH' ? 'בעמוד "הזמנה מהירה" לוחצים לחיצה ארוכה בתיבה ובוחרים "הדבקה", ואז "צרו לי רשימה".' : 'לוחצים "קניה מהירה" בראש האתר, לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך".'],
-        ['בדיקת המוצרים', s.id === 'SH' ? 'עוברים על הרשימה שהאתר מצא: אם מוצר לא נכון לוחצים "החלפה", ומתקנים כמויות ב־+ / −. בסוף לוחצים "הוספה לסל".' : 'לכל שורה האתר מציג מוצרים: לוחצים + על המתאים, מתקנים כמות, ועוברים ל"הבא" עד סוף הרשימה.'],
+        ['בדיקת המוצרים', s.id === 'SH' ? 'עוברים על הרשימה שהאתר מצא: אם מוצר לא נכון לוחצים "החלפה", ומתקנים כמויות ב־+ / −. בסוף לוחצים "הוספה לסל".' : 'לכל שורה האתר מציג כמה מוצרים, וליד כולם הכמות 0. לוחצים + על המוצר המתאים (כמה פעמים כמו הכמות), ורק אז "הבא". בלי + המוצר לא נכנס לסל. בסוף פותחים את העגלה ובודקים שהכול שם.'],
         ['מה שלא נמצא', 'מוצר שהאתר לא זיהה אפשר להוסיף כאן ב"מילוי מוצר אחר מוצר", שפותח אותו ישר באתר.']
       ] : [
         ['מוצר אחר מוצר', 'כאן לוחצים "מילוי מוצר אחר מוצר". לכל מוצר לוחצים "פתיחה ב' + name + '", מוסיפים לעגלה בכמות שמופיעה, חוזרים לכאן ולוחצים "✓ נוסף – הבא".']
@@ -1372,9 +1375,36 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   });
 
   // ---------- install as an app ----------
+  // Android Chrome offers its own install prompt; everywhere else (iPhone, Samsung Internet, Firefox) we explain the menu steps
   let installEvt = null;
-  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('#install-banner').hidden = false; });
-  $('#install-btn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('#install-banner').hidden = true; });
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isPhone = isIOS || /Android/.test(navigator.userAgent);
+  if (!standalone) $('#l-install').hidden = false;
+  if (!standalone && isPhone && !LS.get('install-x')) $('#install-banner').hidden = false;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (!LS.get('install-x')) $('#install-banner').hidden = false; });
+  window.addEventListener('appinstalled', () => { $('#install-banner').hidden = true; $('#l-install').hidden = true; });
+  async function installHelp(){
+    if (installEvt) { installEvt.prompt(); const r = await installEvt.userChoice; installEvt = null; if (r && r.outcome === 'accepted') { $('#install-banner').hidden = true; $('#l-install').hidden = true; } return; }
+    const steps = isIOS ? [
+      'פותחים את הסל הזול בדפדפן Safari (לא ב־Chrome).',
+      'לוחצים על כפתור השיתוף: ריבוע עם חץ למעלה, בתחתית המסך.',
+      'גוללים למטה ובוחרים "הוספה למסך הבית", ואז "הוסף".'
+    ] : [
+      'פותחים את הסל הזול בדפדפן Chrome.',
+      'לוחצים על שלוש הנקודות ⋮ בפינה העליונה.',
+      'בוחרים "התקנת אפליקציה" או "הוספה למסך הבית", ואז "התקנה".'
+    ];
+    showSheet('התקנה בנייד', el('h2', {style:'margin:0;font-size:20px', text:'התקנת הסל הזול בטלפון'}),
+      el('div', {class:'small', text: isIOS ? 'באייפון:' : isPhone ? 'באנדרואיד:' : 'פותחים את הקישור בטלפון, ואז:'}),
+      el('ol', {class:'steps'}, ...steps.map(t => el('li', {text: t}))),
+      isPhone ? null : el('div', {class:'small muted', text:'באייפון: ב־Safari ← כפתור השיתוף ← "הוספה למסך הבית".'}),
+      el('div', {class:'small', text:'מעכשיו הסל הזול מופיע במסך הבית ונפתח כמו אפליקציה. הרשימה נשמרת בטלפון.'}),
+      el('div', {class:'btnrow'}, el('button', {type:'button', class:'cta', style:'min-height:48px', text:'הבנתי', onclick: closeSheet})));
+  }
+  $('#install-btn').addEventListener('click', installHelp);
+  $('#l-install').addEventListener('click', installHelp);
+  $('#install-x').addEventListener('click', () => { $('#install-banner').hidden = true; LS.set('install-x', '1'); });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
   // ---------- catalog (one per region, chosen by the town) ----------
