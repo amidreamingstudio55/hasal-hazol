@@ -1090,14 +1090,17 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       if (v.length < 2) { status.textContent = 'מקלידים שם של מוצר, ורואים את כל היצרנים והמחיר בכל רשת.'; return; }
       let found = searchCat(v, true, 30), approx = false;
       if (!found.length) { found = searchCat(v, false, 30); approx = found.length > 0; }
-      const items = found.map(x => ({it: x.it, c: cheapestAt(x.it, 1)})).filter(x => x.c);
-      items.sort((a, b) => a.c.u - b.c.u);
+      // products that have every typed word as a whole word come first ("פרו" ≠ "פרוטה"), then cheapest first
+      const toks = norm(v).split(' ').filter(t => t.length > 1);
+      const fit = it => toks.filter(t => tokHit(t, nameN(it)) === 3).length;
+      const items = found.map(x => ({it: x.it, c: cheapestAt(x.it, 1), f: fit(x.it)})).filter(x => x.c);
+      items.sort((a, b) => (b.f - a.f) || (a.c.u - b.c.u));
       status.textContent = items.length ? (approx ? 'לא מצאנו בדיוק את זה. הכי קרובים: ' : '') + items.length + ' מוצרים, מהזול ליקר.' : 'לא מצאנו מוצר כזה במחירונים. נסו מילה אחרת או קצרה יותר.';
       items.forEach(({it, c}, i) => {
         const add = el('button', {type:'button', class:'chip', text:'הוספה לרשימה', 'aria-label':'הוספה לרשימה: ' + it[1], onclick: () => { addLine(it[1].split(' ').slice(0, 5).join(' '), it[0]); toast('נוסף לרשימה: ' + it[1]); add.textContent = 'נוסף ✓'; add.disabled = true; }});
         const d = pricesBox(it, 1); if (i < 3) { d.open = true; d.append(priceTable(it, 1)); }
         res.append(el('div', {class:'cmpcard'},
-          el('div', {class:'top'}, pic(it[0], it[1], true), el('div', {class:'nm'}, it[1] + (it[6] ? ' 🇮🇱' : ''), el('div', {class:'lo', text: (it[2] && it[2] !== '---' && it[2].length > 1 ? it[2] + ' · ' : '') + 'הכי זול: ' + fmt(c.u) + ' ₪ ב' + c.s.name}))),
+          el('div', {class:'top'}, pic(it[0], it[1], true), el('div', {class:'nm'}, it[1] + (it[6] ? ' 🇮🇱' : ''), el('div', {class:'lo', text: (it[2] && it[2] !== '---' && it[2].length > 1 && !/לא ידוע/.test(it[2]) ? it[2] + ' · ' : '') + 'הכי זול: ' + fmt(c.u) + ' ₪ ב' + c.s.name}))),
           d, el('div', {}, add)));
       });
     };
