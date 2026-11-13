@@ -183,6 +183,19 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .opt .t{flex:1;display:flex;flex-direction:column;min-width:0}
 .opt b{font-size:17px}
 .opt small{font-size:14px;color:var(--muted)}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.ptab{width:100%;border-collapse:collapse;font-size:15px;margin-top:4px}
+.ptab td{padding:6px 4px;border-top:1px solid var(--line)}
+.ptab td.p{text-align:left;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ptab tr.best td{color:var(--accent-dark);font-weight:800}
+.ptab tr.none td{color:var(--muted);font-weight:400}
+details.prices{margin:-2px 6px 4px}
+details.prices summary{cursor:pointer;font-size:15px;font-weight:700;color:var(--accent-dark);min-height:44px;display:flex;align-items:center}
+.cmpres{display:flex;flex-direction:column;gap:10px;max-height:55vh;overflow:auto}
+.cmpcard{border:2px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.cmpcard .top{display:flex;gap:10px;align-items:center}
+.cmpcard .nm{flex:1;min-width:0;font-weight:700;font-size:16px}
+.cmpcard .lo{font-size:14px;color:var(--muted)}
 .sheet textarea{width:100%;min-height:220px;border:2px solid var(--edge);border-radius:14px;padding:12px;font-size:17px;background:var(--bg);resize:vertical}
 .btnrow{display:flex;gap:10px}
 .btnrow>*{flex:1}
@@ -260,7 +273,9 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     </div>
     <div id="l-sugg" class="sugg" role="listbox" aria-label="הצעות מוצרים" hidden></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="chip" id="l-compare">השוואת מוצר</button>
       <button type="button" class="chip" id="l-paste">הדבקת רשימה מווטסאפ</button>
+      <button type="button" class="chip" id="l-photo">צילום רשימה</button>
       <button type="button" class="chip" id="l-fixed">הרשימה הקבועה שלנו</button>
       <button type="button" class="chip" id="l-clear">ניקוי הרשימה</button>
     </div>
@@ -953,6 +968,8 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   $('#l-help').addEventListener('click', () => { how.hidden = !how.hidden; if (!how.hidden) { how.scrollIntoView({block:'start'}); $('#l-how-ok').focus(); } });
   $('#l-share').addEventListener('click', () => openWhatsApp('רשימת הקניות שלנו בהסל הזול:\n' + shareLink()));
   $('#l-paste').addEventListener('click', openPaste);
+  $('#l-compare').addEventListener('click', () => openCompare($('#l-add').value.trim()));
+  $('#l-photo').addEventListener('click', openPhoto);
   $('#l-clear').addEventListener('click', () => {
     if (!LIST.length || !confirm('למחוק את כל המוצרים מהרשימה?')) return;
     LIST = []; saveList(); renderList(); $('#l-add').focus();
@@ -1008,7 +1025,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       if (m.missing && m.missing.length) opts.append(el('p', {class:'small muted', style:'margin:0', text:'לא מצאנו במחירוני הרשתות: ' + m.missing.join(', ') + '. אלה המוצרים הקרובים ביותר:'}));
       if (list.length) {
         if (!m.fresh) opts.append(mk('cheapest', 'הכי זול בכל רשת', m.variety ? 'כל אחד מ־' + m.cands.length + ' הסוגים שנמצאו, הזול בכל סופר' : 'כל מוצר מתאים, הזול בכל סופר'));
-        list.forEach((it, i) => { const c = cheapestAt(it, m.line.qty); opts.append(mk(i, it[1] + (it[2] && it[2] !== '---' && it[2].length > 1 ? ' · ' + it[2] : '') + (it[6] ? ' · 🇮🇱 תוצרת ישראל' : ''), c ? 'החל מ־' + fmt(c.u) + ' ₪ ב' + c.s.name : 'לא נמכר ברשתות שבחרתם')); });
+        list.forEach((it, i) => { const c = cheapestAt(it, m.line.qty); opts.append(mk(i, it[1] + (it[2] && it[2] !== '---' && it[2].length > 1 ? ' · ' + it[2] : '') + (it[6] ? ' · 🇮🇱 תוצרת ישראל' : ''), c ? 'החל מ־' + fmt(c.u) + ' ₪ ב' + c.s.name : 'לא נמכר ברשתות שבחרתם')); if (c) opts.append(pricesBox(it, m.line.qty)); });
       } else if (!(m.fresh && m.fresh.length)) opts.append(el('p', {class:'small muted', style:'margin:0', text:'לא מצאנו מוצר בשם הזה במחירונים. נסו שם קצר או כללי יותר, למשל "טונה" במקום שם מלא של מותג.'}));
     };
     drawOpts();
@@ -1044,6 +1061,96 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       el('div', {class:'btnrow'},
         el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'הוספה לרשימה', onclick: () => { addLine(ta.value); closeSheet(); }}),
         el('button', {type:'button', class:'ghostbtn', text:'החלפת הרשימה', onclick: () => { LIST = []; addLine(ta.value); closeSheet(); }})));
+  }
+
+  // one product's price at every store the shopper compares, cheapest first
+  function priceTable(it, qty){
+    const rows = active().map(s => ({s, u: unit(it, s.k, qty || 1)}));
+    rows.sort((a, b) => (a.u == null) - (b.u == null) || (a.u || 0) - (b.u || 0));
+    const best = rows.length && rows[0].u != null ? rows[0].u : null;
+    return el('table', {class:'ptab'}, el('caption', {class:'sr-only', text:'מחיר ' + it[1] + ' בכל רשת'}),
+      el('tbody', {}, ...rows.map(r => el('tr', {class: r.u == null ? 'none' : (r.u === best ? 'best' : '')},
+        el('td', {text: r.s.name}),
+        el('td', {class:'p', text: r.u == null ? 'לא נמכר' : fmt(r.u) + ' ₪' + (r.u === best ? ' · הכי זול' : '') + (promoAt(it, r.s.k, qty || 1) ? ' · מבצע' : '')})))));
+  }
+  function pricesBox(it, qty){
+    const d = el('details', {class:'prices'}, el('summary', {text:'המחיר בכל רשת'}));
+    d.addEventListener('toggle', () => { if (d.open && d.children.length < 2) d.append(priceTable(it, qty)); }, {once:false});
+    return d;
+  }
+
+  // compare one product across makers and chains, without adding it to the list
+  function openCompare(start){
+    const inp = el('input', {type:'search', value: start || '', placeholder:'למשל: משקה פרו, קוטג׳, שמן זית', 'aria-label':'איזה מוצר להשוות', enterkeyhint:'search', style:'height:50px;border:2px solid #9a8d82;border-radius:12px;padding:0 12px;font-size:17px'});
+    const status = el('div', {class:'small muted', role:'status', 'aria-live':'polite'});
+    const res = el('div', {class:'cmpres'});
+    const draw = () => {
+      res.textContent = '';
+      const v = inp.value.trim();
+      if (v.length < 2) { status.textContent = 'מקלידים שם של מוצר, ורואים את כל היצרנים והמחיר בכל רשת.'; return; }
+      let found = searchCat(v, true, 30), approx = false;
+      if (!found.length) { found = searchCat(v, false, 30); approx = found.length > 0; }
+      const items = found.map(x => ({it: x.it, c: cheapestAt(x.it, 1)})).filter(x => x.c);
+      items.sort((a, b) => a.c.u - b.c.u);
+      status.textContent = items.length ? (approx ? 'לא מצאנו בדיוק את זה. הכי קרובים: ' : '') + items.length + ' מוצרים, מהזול ליקר.' : 'לא מצאנו מוצר כזה במחירונים. נסו מילה אחרת או קצרה יותר.';
+      items.forEach(({it, c}, i) => {
+        const add = el('button', {type:'button', class:'chip', text:'הוספה לרשימה', 'aria-label':'הוספה לרשימה: ' + it[1], onclick: () => { addLine(it[1].split(' ').slice(0, 5).join(' '), it[0]); toast('נוסף לרשימה: ' + it[1]); add.textContent = 'נוסף ✓'; add.disabled = true; }});
+        const d = pricesBox(it, 1); if (i < 3) { d.open = true; d.append(priceTable(it, 1)); }
+        res.append(el('div', {class:'cmpcard'},
+          el('div', {class:'top'}, pic(it[0], it[1], true), el('div', {class:'nm'}, it[1] + (it[6] ? ' 🇮🇱' : ''), el('div', {class:'lo', text: (it[2] && it[2] !== '---' && it[2].length > 1 ? it[2] + ' · ' : '') + 'הכי זול: ' + fmt(c.u) + ' ₪ ב' + c.s.name}))),
+          d, el('div', {}, add)));
+      });
+    };
+    let t; inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(draw, 200); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(t); draw(); } });
+    showSheet('השוואת מוצר', el('h2', {text:'השוואת מוצר'}), inp, status, res,
+      el('div', {class:'btnrow'}, el('button', {type:'button', class:'ghostbtn', text:'סגירה', onclick: closeSheet})));
+    draw(); inp.focus();
+    if (!CAT.length) status.textContent = 'המחירים עוד נטענים. נסו שוב בעוד רגע.';
+  }
+
+  // read a shopping list from a photo or screenshot, on the phone itself (Tesseract, Hebrew), then review before adding
+  let ocrLib = null;
+  function loadOCR(){
+    if (window.Tesseract) return Promise.resolve(window.Tesseract);
+    if (!ocrLib) ocrLib = new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'; sc.onload = () => ok(window.Tesseract); sc.onerror = () => { ocrLib = null; no(new Error('load')); }; document.head.append(sc); });
+    return ocrLib;
+  }
+  function cleanOCR(text){
+    return text.split('\n').map(l => l.replace(/[\[\]☐☑✓✔•●▪◦*_|~=<>«»]+/g, ' ').replace(/^\s*[-–—.\d)]+\s+(?=\D)/, '').replace(/\s+/g, ' ').trim())
+      .filter(l => /[֐-׿]/.test(l) && l.replace(/[^֐-׿A-Za-z]/g, '').length >= 2).join('\n');
+  }
+  function openPhoto(){
+    const file = el('input', {type:'file', accept:'image/*', style:'display:none'});
+    file.addEventListener('change', () => { const f = file.files && file.files[0]; file.remove(); if (f) readPhoto(f); });
+    document.body.append(file); file.click();
+  }
+  function readPhoto(f){
+    const status = el('div', {class:'small', role:'status', 'aria-live':'polite', text:'מכין את זיהוי הטקסט… (בפעם הראשונה זה לוקח כמה שניות)'});
+    const bar = el('progress', {max:'100', value:'0', style:'width:100%;height:14px', 'aria-label':'התקדמות הזיהוי'});
+    const prev = el('img', {alt:'התמונה שנבחרה', style:'max-width:100%;max-height:180px;object-fit:contain;border-radius:12px;align-self:center'});
+    prev.src = URL.createObjectURL(f);
+    let cancelled = false;
+    showSheet('צילום רשימה', el('h2', {text:'קוראים את הרשימה מהתמונה'}), prev, bar, status,
+      el('div', {class:'small muted', text:'הזיהוי נעשה בטלפון עצמו. התמונה לא נשלחת לשום מקום.'}),
+      el('div', {class:'btnrow'}, el('button', {type:'button', class:'ghostbtn', text:'ביטול', onclick: () => { cancelled = true; closeSheet(); }})));
+    let worker = null;
+    loadOCR().then(T => T.createWorker(['heb', 'eng'], 1, {logger: m => { if (m.status === 'recognizing text') { bar.value = Math.round(m.progress * 100); status.textContent = 'קורא את הרשימה… ' + Math.round(m.progress * 100) + '%'; } else if (/load/.test(m.status)) status.textContent = 'טוען את זיהוי העברית…'; }}))
+      .then(w => { worker = w; return cancelled ? null : w.recognize(f); })
+      .then(r => {
+        if (worker) worker.terminate();
+        URL.revokeObjectURL(prev.src);
+        if (cancelled || !r) return;
+        const txt = cleanOCR(r.data.text || '');
+        if (!txt) { showSheet('צילום רשימה', el('h2', {text:'לא הצלחנו לקרוא את הרשימה'}), el('p', {text:'נסו צילום חד יותר, באור טוב ומלמעלה, או צילום מסך של הרשימה. כתב יד קשה יותר לזיהוי.'}), el('div', {class:'btnrow'}, el('button', {type:'button', class:'cta', text:'צילום אחר', onclick: () => { closeSheet(); openPhoto(); }}), el('button', {type:'button', class:'ghostbtn', text:'סגירה', onclick: closeSheet}))); return; }
+        const ta = el('textarea', {'aria-label':'המוצרים שזוהו, אפשר לתקן', style:'min-height:180px'}); ta.value = txt;
+        showSheet('צילום רשימה', el('h2', {text:'זה מה שזיהינו'}),
+          el('div', {class:'small', text:'בודקים ומתקנים: שורה לכל מוצר, אפשר עם כמות ("2 חלב"). מוחקים שורות שאינן מוצרים.'}), ta,
+          el('div', {class:'btnrow'},
+            el('button', {type:'button', class:'cta', style:'height:52px;font-size:17px', text:'הוספה לרשימה', onclick: () => { const n = parseList(ta.value).length; addLine(ta.value); closeSheet(); toast(n + ' מוצרים נוספו לרשימה'); }}),
+            el('button', {type:'button', class:'ghostbtn', text:'ביטול', onclick: closeSheet})));
+      })
+      .catch(() => { if (worker) worker.terminate(); if (!cancelled) { status.textContent = 'הזיהוי לא הצליח. צריך חיבור לאינטרנט בפעם הראשונה. נסו שוב, או הדביקו את הרשימה כטקסט.'; bar.hidden = true; } });
   }
 
   // ---------- 2 · results ----------
