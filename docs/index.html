@@ -793,7 +793,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
         return {ok: !(d && d.st === 'q'), site: s.id, name: s.name, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'יש משלוח עד הבית ל' + SET.city + ' ✓') + ' · ' + fmt(s.fee) + ' ₪' + min + (d && d.pickup ? ' · או ' + d.pickup : '') + (d && /לא כשר/.test(d.note) ? ' · לא כשר' : '')};
       }
       if (d && d.st === 'ok') return {ok: true, site: ({CB:'CO', CR:'CO', RR:'RL', SD:'SH', RJ:'RL', RG:'RL', RA:'RL', YA:'YO', KA:'KT'})[s.id] || s.id, name: d.name, t: '🚚 ' + pre + 'יש משלוח ל' + SET.city + ' ✓ דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '')};
-      if (d && d.st === 'no') return {ok: false, t: '🏬 ' + pre + d.name.replace(/ אונליין$/, '') + ' לא משלחת ל' + SET.city + ' · קנייה בסניף'};
+      if (d && d.st === 'no') return {ok: false, t: '🏬 ' + pre + d.name.replace(/ אונליין$/, '') + (/^אין/.test(d.note) ? ': ' + d.note : ' לא משלחת ל' + SET.city) + ' · קנייה בסניף'};
       return {ok: false, t: '🏬 ' + pre + 'קנייה בסניף · משלוח מהרשת הזו עוד לא נבדק'};
     });
   }
