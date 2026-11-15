@@ -409,14 +409,24 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['ok','חצי חינם אונליין','משלוח 35.90 ₪ · מינימום 500 ₪'], ['q','טיב טעם אונליין','דמי המשלוח הם הערכה'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לכאן']],
       near: [['ok','שופרסל דיל ז׳בוטינסקי','ז׳בוטינסקי 16'], ['ok','רמי לוי ראשון לציון','מתחם סינימה, שד׳ משה דיין'], ['ok','אושר עד ראשון לציון','אצל 26'], ['ok','יוחננוף רמת אליהו','משורר השואה 15'], ['ok','קשת טעמים ראשל״צ מערב','לח״י 4'], ['ok','קרפור מרקט ראשל״צ','החלמונית 29']]
     },
+    // checked 15/11/2026 on each chain's site (delivery areas, pickup branches) for Gilo, Jerusalem
     'ירושלים': {
       region: 'jlm',
-      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לכתובת שלכם'], ['q','רמי לוי אונליין','המחירים לפי סניף תלפיות; עוד לא בדקנו משלוח לכתובת']],
-      near: [['ok','רמי לוי · אושר עד · יוחננוף תלפיות','קנייה בסניף'], ['ok','רמי לוי · אושר עד גבעת שאול · קשת טעמים גבעת רם','קנייה בסניף']]
+      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪','איסוף עצמי מהאומן 17, תלפיות (15 ₪)'],
+              ['ok','קרפור אונליין','משלוח 35.90 ₪ · מינימום 200 ₪','איסוף עצמי מדניאל ינובסקי 4, תלפיות (15 ₪)'],
+              ['ok','טיב טעם אונליין','משלוח 29.90 ₪ · לא כשר'],
+              ['no','רמי לוי אונליין','לא משלחת לגילה לפי רשימת אזורי המשלוח'],
+              ['no','אושר עד','אין הזמנה אונליין'], ['no','יוחננוף','אין הזמנה אונליין']],
+      near: [['ok','רמי לוי · אושר עד · יוחננוף תלפיות','כ־10 דקות מגילה']]
     },
     'עפולה': {
       region: 'afula',
-      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪'], ['q','קרפור אונליין','עוד לא בדקנו שמשלחת לעפולה'], ['q','רמי לוי אונליין','המחירים לפי סניף עפולה; עוד לא בדקנו משלוח']],
+      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪','איסוף עצמי משד׳ יצחק רבין 5 או מכורש 5 (15 ₪)'],
+              ['ok','קרפור אונליין','משלוח 35.90 ₪ · מינימום 200 ₪','איסוף עצמי משד׳ מנחם בגין 51 (15 ₪)'],
+              ['ok','טיב טעם אונליין','משלוח 29.90 ₪ · לא כשר'],
+              ['ok','קשת טעמים אונליין','משלוח 35.90 ₪ · ממרכז המשלוחים בצפון, המחירים שם עשויים להיות שונים מהסניף · לא כשר'],
+              ['no','רמי לוי אונליין','לא משלחת לעפולה לפי רשימת אזורי המשלוח'],
+              ['no','אושר עד','אין הזמנה אונליין'], ['no','יוחננוף','אין הזמנה אונליין']],
       near: [['ok','רמי לוי עפולה','יהושע חנקין 14'], ['ok','אושר עד עפולה','חיים לסקוב'], ['ok','יוחננוף עפולה','קהילת ציון 30'], ['ok','קשת טעמים עפולה','האומן 3']]
     },
     'צור הדסה': {
@@ -771,7 +781,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     const r = town.deliv.find(x => x[1].startsWith(chain));
     if (!r) return null;
     const fee = +((r[2].match(/משלוח ([\d.]+)/) || [])[1] || (s.mode === 'delivery' ? s.fee : 0));
-    return {st: r[0], name: r[1].replace(/ אונליין$/, '') + ' אונליין', note: r[2], fee};
+    return {st: r[0], name: r[1].replace(/ אונליין$/, '') + ' אונליין', note: r[2], fee, pickup: r[3] || ''};
   }
   // one line per shop on the option card: how the shopping gets home
   function delivLines(o){
@@ -780,7 +790,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       const pre = o.used.length > 1 ? s.name + ': ' : '';
       if (s.mode === 'delivery') {
         const min = s.min && sub < s.min ? ' · חסרים ' + fmt(s.min - sub) + ' ₪ למינימום' : (s.min ? ' · מינימום ' + s.min + ' ₪ ✓' : '');
-        return {ok: !(d && d.st === 'q'), site: s.id, name: s.name, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'יש משלוח עד הבית ל' + SET.city + ' ✓') + ' · ' + fmt(s.fee) + ' ₪' + min};
+        return {ok: !(d && d.st === 'q'), site: s.id, name: s.name, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'יש משלוח עד הבית ל' + SET.city + ' ✓') + ' · ' + fmt(s.fee) + ' ₪' + min + (d && d.pickup ? ' · או ' + d.pickup : '') + (d && /לא כשר/.test(d.note) ? ' · לא כשר' : '')};
       }
       if (d && d.st === 'ok') return {ok: true, site: ({CB:'CO', CR:'CO', RR:'RL', SD:'SH', RJ:'RL', RG:'RL', RA:'RL', YA:'YO', KA:'KT'})[s.id] || s.id, name: d.name, t: '🚚 ' + pre + 'יש משלוח ל' + SET.city + ' ✓ דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '')};
       if (d && d.st === 'no') return {ok: false, t: '🏬 ' + pre + d.name.replace(/ אונליין$/, '') + ' לא משלחת ל' + SET.city + ' · קנייה בסניף'};
@@ -1289,7 +1299,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   // chains whose website has no online shop at all (checked 11/2026)
   const NO_ONLINE = {OA:1, OR:1};
   // branches added for more towns: each behaves like its chain's first branch (site, online shop, how to order)
-  const ALIAS = {RJ:'RL', RG:'RL', RA:'RL', OJ:'OA', OT:'OA', OF:'OA', YA:'YO', KA:'KT'};
+  const ALIAS = {RJ:'RL', RA:'RL', OT:'OA', OF:'OA', YA:'YO', KA:'KT'};
   for (const [a, b] of Object.entries(ALIAS)) {
     if (SITE[b]) SITE[a] = SITE[b]; if (SHOP_LINK[b]) SHOP_LINK[a] = SHOP_LINK[b]; if (ONLINE[b]) ONLINE[a] = ONLINE[b];
     if (QUICK[b]) QUICK[a] = QUICK[b]; if (NO_ONLINE[b]) NO_ONLINE[a] = 1;

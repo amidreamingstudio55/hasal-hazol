@@ -35,11 +35,9 @@ STORES = [
     ('YR', 'cerberus', {'user': 'yohananof', 'store': '028'}, {'name': 'יוחננוף רמת אליהו', 'mode': 'store', 'area': 'rishon'}),
     ('KR', 'cerberus', {'user': 'Keshet', 'store': '024'}, {'name': 'קשת טעמים ראשל״צ מערב', 'mode': 'store', 'area': 'rishon'}),
     ('CR', 'carrefour', {'store': '063'}, {'name': 'קרפור מרקט ראשל״צ', 'mode': 'store', 'area': 'rishon'}),
-    # Jerusalem (store ids from the chains' Stores files, 15/11/2026)
+    # Jerusalem: the Talpiot branches, ~10 minutes from Gilo (store ids from the chains' Stores files, 15/11/2026)
     ('RJ', 'cerberus', {'user': 'RamiLevi', 'store': '001'}, {'name': 'רמי לוי תלפיות', 'mode': 'store', 'area': 'jlm'}),
     ('OT', 'cerberus', {'user': 'osherad', 'store': '026'}, {'name': 'אושר עד תלפיות', 'mode': 'store', 'area': 'jlm'}),
-    ('RG', 'cerberus', {'user': 'RamiLevi', 'store': '013'}, {'name': 'רמי לוי גבעת שאול', 'mode': 'store', 'area': 'jlm'}),
-    ('OJ', 'cerberus', {'user': 'osherad', 'store': '003'}, {'name': 'אושר עד גבעת שאול', 'mode': 'store', 'area': 'jlm'}),
     # Afula
     ('RA', 'cerberus', {'user': 'RamiLevi', 'store': '011'}, {'name': 'רמי לוי עפולה', 'mode': 'store', 'area': 'afula'}),
     ('OF', 'cerberus', {'user': 'osherad', 'store': '019'}, {'name': 'אושר עד עפולה', 'mode': 'store', 'area': 'afula'}),
@@ -57,11 +55,11 @@ REGIONS = {
     'rishon': {'file': 'catalog-rishon.json', 'stores': ['SH', 'CO', 'HH', 'TO', 'SD', 'RR', 'OR', 'YR', 'KR', 'CR'],
                'areas': [['delivery', 'משלוח עד הבית', 'שופרסל, חצי חינם, טיב טעם, קרפור'],
                          ['rishon', 'קנייה בסניפים בראשון לציון', 'שופרסל דיל, רמי לוי, אושר עד, יוחננוף, קשת טעמים, קרפור']]},
-    'jlm': {'file': 'catalog-jlm.json', 'stores': ['SH', 'CO', 'RJ', 'OT', 'YO', 'RG', 'OJ', 'KT'],
-            'areas': [['delivery', 'משלוח עד הבית', 'שופרסל אונליין, קרפור אונליין'],
-                      ['jlm', 'קנייה בסניפים בירושלים', 'תלפיות: רמי לוי, אושר עד, יוחננוף · גבעת שאול: רמי לוי, אושר עד · גבעת רם: קשת טעמים']]},
-    'afula': {'file': 'catalog-afula.json', 'stores': ['SH', 'CO', 'RA', 'OF', 'YA', 'KA'],
-              'areas': [['delivery', 'משלוח עד הבית', 'שופרסל אונליין, קרפור אונליין'],
+    'jlm': {'file': 'catalog-jlm.json', 'stores': ['SH', 'CO', 'TO', 'RJ', 'OT', 'YO'],
+            'areas': [['delivery', 'משלוח או איסוף עצמי', 'שופרסל, קרפור, טיב טעם'],
+                      ['jlm', 'קנייה בסניפים בתלפיות', 'רמי לוי, אושר עד, יוחננוף']]},
+    'afula': {'file': 'catalog-afula.json', 'stores': ['SH', 'CO', 'TO', 'RA', 'OF', 'YA', 'KA'],
+              'areas': [['delivery', 'משלוח או איסוף עצמי', 'שופרסל, קרפור, טיב טעם'],
                         ['afula', 'קנייה בסניפים בעפולה', 'רמי לוי, אושר עד, יוחננוף, קשת טעמים']]},
 }
 CLUB_OK = {'SH'}  # the family is a Shufersal club member
@@ -83,7 +81,9 @@ def get(op, url, data=None, timeout=45):
 
 
 def latest(names, kind, store):
-    c = [n for n in names if n.lower().startswith(kind) and re.search(r'-' + store + r'-', n)]
+    # the store id is the field right before the file's date (…-<store>-YYYYMMDD…); a looser match
+    # would also hit the sub-chain field, which is 000/001 in every file of the chain
+    c = [n for n in names if n.lower().startswith(kind) and re.search(r'-' + store + r'-\d{8}', n)]
     return sorted(c)[-1] if c else None
 
 
