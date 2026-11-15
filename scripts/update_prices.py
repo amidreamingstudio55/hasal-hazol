@@ -35,6 +35,16 @@ STORES = [
     ('YR', 'cerberus', {'user': 'yohananof', 'store': '028'}, {'name': 'יוחננוף רמת אליהו', 'mode': 'store', 'area': 'rishon'}),
     ('KR', 'cerberus', {'user': 'Keshet', 'store': '024'}, {'name': 'קשת טעמים ראשל״צ מערב', 'mode': 'store', 'area': 'rishon'}),
     ('CR', 'carrefour', {'store': '063'}, {'name': 'קרפור מרקט ראשל״צ', 'mode': 'store', 'area': 'rishon'}),
+    # Jerusalem (store ids from the chains' Stores files, 15/11/2026)
+    ('RJ', 'cerberus', {'user': 'RamiLevi', 'store': '001'}, {'name': 'רמי לוי תלפיות', 'mode': 'store', 'area': 'jlm'}),
+    ('OT', 'cerberus', {'user': 'osherad', 'store': '026'}, {'name': 'אושר עד תלפיות', 'mode': 'store', 'area': 'jlm'}),
+    ('RG', 'cerberus', {'user': 'RamiLevi', 'store': '013'}, {'name': 'רמי לוי גבעת שאול', 'mode': 'store', 'area': 'jlm'}),
+    ('OJ', 'cerberus', {'user': 'osherad', 'store': '003'}, {'name': 'אושר עד גבעת שאול', 'mode': 'store', 'area': 'jlm'}),
+    # Afula
+    ('RA', 'cerberus', {'user': 'RamiLevi', 'store': '011'}, {'name': 'רמי לוי עפולה', 'mode': 'store', 'area': 'afula'}),
+    ('OF', 'cerberus', {'user': 'osherad', 'store': '019'}, {'name': 'אושר עד עפולה', 'mode': 'store', 'area': 'afula'}),
+    ('YA', 'cerberus', {'user': 'yohananof', 'store': '037'}, {'name': 'יוחננוף עפולה', 'mode': 'store', 'area': 'afula'}),
+    ('KA', 'cerberus', {'user': 'Keshet', 'store': '023'}, {'name': 'קשת טעמים עפולה', 'mode': 'store', 'area': 'afula'}),
 ]
 # each region gets its own catalog file; the site picks one by the town in the address
 REGIONS = {
@@ -47,6 +57,12 @@ REGIONS = {
     'rishon': {'file': 'catalog-rishon.json', 'stores': ['SH', 'CO', 'HH', 'TO', 'SD', 'RR', 'OR', 'YR', 'KR', 'CR'],
                'areas': [['delivery', 'משלוח עד הבית', 'שופרסל, חצי חינם, טיב טעם, קרפור'],
                          ['rishon', 'קנייה בסניפים בראשון לציון', 'שופרסל דיל, רמי לוי, אושר עד, יוחננוף, קשת טעמים, קרפור']]},
+    'jlm': {'file': 'catalog-jlm.json', 'stores': ['SH', 'CO', 'RJ', 'OT', 'YO', 'RG', 'OJ', 'KT'],
+            'areas': [['delivery', 'משלוח עד הבית', 'שופרסל אונליין, קרפור אונליין'],
+                      ['jlm', 'קנייה בסניפים בירושלים', 'תלפיות: רמי לוי, אושר עד, יוחננוף · גבעת שאול: רמי לוי, אושר עד · גבעת רם: קשת טעמים']]},
+    'afula': {'file': 'catalog-afula.json', 'stores': ['SH', 'CO', 'RA', 'OF', 'YA', 'KA'],
+              'areas': [['delivery', 'משלוח עד הבית', 'שופרסל אונליין, קרפור אונליין'],
+                        ['afula', 'קנייה בסניפים בעפולה', 'רמי לוי, אושר עד, יוחננוף, קשת טעמים']]},
 }
 CLUB_OK = {'SH'}  # the family is a Shufersal club member
 EXC = re.compile('קופון|מתנה|ומעלה|סיבוס|סודקסו|עובד|כרטיס|ביטוח|אשראי|תן ביס|גיפט|שובר|נקודות|ארגון|הקרן|עמותת')
