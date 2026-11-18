@@ -26,12 +26,20 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Shabbat and Yom Tov - the scheduled update does not run
+        id: shabbat
+        if: github.event_name == 'schedule'
+        run: |
+          if python3 scripts/shabbat.py; then echo "rest=false" >> "$GITHUB_OUTPUT"; else echo "rest=true" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-python@v5
+        if: steps.shabbat.outputs.rest != 'true'
         with:
           python-version: '3.12'
       - name: Download and build the catalog
+        if: steps.shabbat.outputs.rest != 'true'
         run: python scripts/update_prices.py
       - name: Save the catalog in the repository
+        if: steps.shabbat.outputs.rest != 'true'
         run: |
           git config user.name "price-bot"
           git config user.email "price-bot@users.noreply.github.com"
@@ -40,8 +48,11 @@ jobs:
           git pull --rebase -X theirs --autostash  # on a clash keep the catalog built just now
           git push
       - uses: actions/configure-pages@v5
+        if: steps.shabbat.outputs.rest != 'true'
       - uses: actions/upload-pages-artifact@v3
+        if: steps.shabbat.outputs.rest != 'true'
         with:
           path: docs
       - id: deploy
+        if: steps.shabbat.outputs.rest != 'true'
         uses: actions/deploy-pages@v4
