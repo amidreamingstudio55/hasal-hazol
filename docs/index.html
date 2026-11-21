@@ -228,7 +228,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   </div>
   <div class="body">
     <label class="field">ישוב<input id="a-city" type="text" autocomplete="address-level2" list="a-towns"></label>
-    <datalist id="a-towns"><option value="צור הדסה"></option><option value="ראשון לציון"></option><option value="ירושלים"></option><option value="עפולה"></option></datalist>
+    <datalist id="a-towns"><option value="צור הדסה"></option><option value="ראשון לציון"></option><option value="ירושלים"></option><option value="עפולה"></option><option value="קריית ביאליק"></option></datalist>
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
       <label class="field" style="grid-column:span 2">רחוב<input id="a-street" type="text" autocomplete="address-line1"></label>
       <label class="field">מספר<input id="a-num" type="text" inputmode="numeric"></label>
@@ -428,6 +428,17 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
               ['no','רמי לוי אונליין','לא משלחת לעפולה לפי רשימת אזורי המשלוח'],
               ['no','אושר עד','אין הזמנה אונליין'], ['no','יוחננוף','אין הזמנה אונליין']],
       near: [['ok','רמי לוי עפולה','יהושע חנקין 14'], ['ok','אושר עד עפולה','חיים לסקוב'], ['ok','יוחננוף עפולה','קהילת ציון 30'], ['ok','קשת טעמים עפולה','האומן 3']]
+    },
+    // checked 21/11/2026 on each chain's site (delivery areas, pickup branches) for Kiryat Bialik
+    'קריית ביאליק': {
+      region: 'krayot',
+      deliv: [['ok','שופרסל אונליין','משלוח 35.90 ₪','איסוף עצמי מדרך עכו 192, קריית ביאליק (15 ₪)'],
+              ['ok','קרפור אונליין','משלוח 35.90 ₪ · מינימום 200 ₪'],
+              ['ok','טיב טעם אונליין','משלוח 29.90 ₪ · לא כשר','איסוף עצמי מחוצות המפרץ (15 ₪)'],
+              ['ok','רמי לוי אונליין','משלוח 35.90 ₪ · המחירים לפי סניף עין המפרץ, באתר עשויים להיות שונים'],
+              ['ok','קשת טעמים אונליין','משלוח 35.90 ₪ · ממרכז המשלוחים בצפון, המחירים שם עשויים להיות שונים מהסניף · לא כשר'],
+              ['no','סאלח דבאח','אין הזמנה אונליין'], ['no','אושר עד','אין הזמנה אונליין'], ['no','יוחננוף','אין הזמנה אונליין']],
+      near: [['ok','סאלח דבאח עין המפרץ',''], ['ok','אושר עד קריית ביאליק','הנס מולר 6'], ['ok','רמי לוי עין המפרץ',''], ['ok','יוחננוף חוצות המפרץ',''], ['ok','קשת טעמים קריית חיים','איצטדיון 5']]
     },
     'צור הדסה': {
       region: 'tzur',
@@ -774,7 +785,8 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   }
   const optName = o => o.used.map(s => s.name).join(' + ');
   // home delivery for a store, by what we checked for the shopper's town
-  const ONLINE = {SH:'שופרסל', SD:'שופרסל', CO:'קרפור', CB:'קרפור', CR:'קרפור', RL:'רמי לוי', RR:'רמי לוי', VI:'ויקטורי', HH:'חצי חינם', TO:'טיב טעם', YO:'יוחננוף', YR:'יוחננוף', OA:'אושר עד', OR:'אושר עד', KT:'קשת', KR:'קשת'};
+  TOWNS['קרית ביאליק'] = TOWNS['קריית ביאליק'];  // common spelling
+  const ONLINE = {SH:'שופרסל', SD:'שופרסל', CO:'קרפור', CB:'קרפור', CR:'קרפור', RL:'רמי לוי', RR:'רמי לוי', VI:'ויקטורי', HH:'חצי חינם', TO:'טיב טעם', YO:'יוחננוף', YR:'יוחננוף', OA:'אושר עד', OR:'אושר עד', KT:'קשת', KR:'קשת', DB:'סאלח דבאח'};
   function delivFor(s){
     const town = TOWNS[SET.city], chain = ONLINE[s.id];
     if (!town || !chain) return null;
@@ -792,7 +804,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
         const min = s.min && sub < s.min ? ' · חסרים ' + fmt(s.min - sub) + ' ₪ למינימום' : (s.min ? ' · מינימום ' + s.min + ' ₪ ✓' : '');
         return {ok: !(d && d.st === 'q'), site: s.id, name: s.name, t: '🚚 ' + pre + (d && d.st === 'q' ? 'משלוח (עוד לא בדקנו לישוב שלכם)' : 'יש משלוח עד הבית ל' + SET.city + ' ✓') + ' · ' + fmt(s.fee) + ' ₪' + min + (d && d.pickup ? ' · או ' + d.pickup : '') + (d && /לא כשר/.test(d.note) ? ' · לא כשר' : '')};
       }
-      if (d && d.st === 'ok') return {ok: true, site: ({CB:'CO', CR:'CO', RR:'RL', SD:'SH', RJ:'RL', RG:'RL', RA:'RL', YA:'YO', KA:'KT'})[s.id] || s.id, name: d.name, t: '🚚 ' + pre + 'יש משלוח ל' + SET.city + ' ✓ דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '') + (/שונים/.test(d.note) ? ' · המחירים באתר עשויים להיות שונים מהסניף' : '') + (/לא כשר/.test(d.note) ? ' · לא כשר' : '')};
+      if (d && d.st === 'ok') return {ok: true, site: ({CB:'CO', CR:'CO', RR:'RL', SD:'SH', RJ:'RL', RG:'RL', RA:'RL', RK:'RL', YA:'YO', YK:'YO', KA:'KT', KK:'KT'})[s.id] || s.id, name: d.name, t: '🚚 ' + pre + 'יש משלוח ל' + SET.city + ' ✓ דרך ' + d.name + (d.fee ? ' · +' + fmt(d.fee) + ' ₪ = ' + fmt(sub + d.fee) + ' ₪' : '') + (/שונים/.test(d.note) ? ' · המחירים באתר עשויים להיות שונים מהסניף' : '') + (/לא כשר/.test(d.note) ? ' · לא כשר' : '')};
       if (d && d.st === 'no') return {ok: false, t: '🏬 ' + pre + (/^אין/.test(d.note) ? (pre ? '' : d.name.replace(/ אונליין$/, '') + ': ') + d.note : d.name.replace(/ אונליין$/, '') + ' לא משלחת ל' + SET.city) + ' · קנייה בסניף'};
       return {ok: false, t: '🏬 ' + pre + 'קנייה בסניף · משלוח מהרשת הזו עוד לא נבדק'};
     });
@@ -1295,11 +1307,11 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     let ok = false; try { ok = document.execCommand('copy'); } catch(e) {} ta.remove(); return Promise.resolve(ok);
   }
   // "רמי לוי ביתר עילית" → "רמי לוי אונליין": the branch's prices, ordered on the chain's online site
-  const onlineName = s => s.mode === 'store' ? (ONLINE[s.id] && /^(RJ|RG|RA|YA|KA)$/.test(s.id) ? ({'קשת':'קשת טעמים'})[ONLINE[s.id]] || ONLINE[s.id] : s.name.replace(/ (ביתר עילית|בית שמש|היפר.*)$/, '').replace(/ היפר$/, '')) + ' אונליין' : s.name;
+  const onlineName = s => s.mode === 'store' ? (ONLINE[s.id] && /^(RJ|RG|RA|RK|YA|YK|KA|KK)$/.test(s.id) ? ({'קשת':'קשת טעמים'})[ONLINE[s.id]] || ONLINE[s.id] : s.name.replace(/ (ביתר עילית|בית שמש|היפר.*)$/, '').replace(/ היפר$/, '')) + ' אונליין' : s.name;
   // chains whose website has no online shop at all (checked 11/2026)
-  const NO_ONLINE = {OA:1, OR:1};
+  const NO_ONLINE = {OA:1, OR:1, DB:1};
   // branches added for more towns: each behaves like its chain's first branch (site, online shop, how to order)
-  const ALIAS = {RJ:'RL', RA:'RL', OT:'OA', OF:'OA', YA:'YO', KA:'KT'};
+  const ALIAS = {RJ:'RL', RA:'RL', RK:'RL', OT:'OA', OF:'OA', OK:'OA', YA:'YO', YK:'YO', KA:'KT', KK:'KT'};
   for (const [a, b] of Object.entries(ALIAS)) {
     if (SITE[b]) SITE[a] = SITE[b]; if (SHOP_LINK[b]) SHOP_LINK[a] = SHOP_LINK[b]; if (ONLINE[b]) ONLINE[a] = ONLINE[b];
     if (QUICK[b]) QUICK[a] = QUICK[b]; if (NO_ONLINE[b]) NO_ONLINE[a] = 1;

@@ -43,6 +43,12 @@ STORES = [
     ('OF', 'cerberus', {'user': 'osherad', 'store': '019'}, {'name': 'אושר עד עפולה', 'mode': 'store', 'area': 'afula'}),
     ('YA', 'cerberus', {'user': 'yohananof', 'store': '037'}, {'name': 'יוחננוף עפולה', 'mode': 'store', 'area': 'afula'}),
     ('KA', 'cerberus', {'user': 'Keshet', 'store': '023'}, {'name': 'קשת טעמים עפולה', 'mode': 'store', 'area': 'afula'}),
+    # Kiryat Bialik and the Krayot (store ids from the chains' Stores files, 21/11/2026)
+    ('DB', 'cerberus', {'user': 'SalachD', 'password': '12345', 'store': '007'}, {'name': 'סאלח דבאח עין המפרץ', 'mode': 'store', 'area': 'krayot'}),
+    ('RK', 'cerberus', {'user': 'RamiLevi', 'store': '028'}, {'name': 'רמי לוי עין המפרץ', 'mode': 'store', 'area': 'krayot'}),
+    ('OK', 'cerberus', {'user': 'osherad', 'store': '005'}, {'name': 'אושר עד קריית ביאליק', 'mode': 'store', 'area': 'krayot'}),
+    ('YK', 'cerberus', {'user': 'yohananof', 'store': '013'}, {'name': 'יוחננוף חוצות המפרץ', 'mode': 'store', 'area': 'krayot'}),
+    ('KK', 'cerberus', {'user': 'Keshet', 'store': '016'}, {'name': 'קשת טעמים קריית חיים', 'mode': 'store', 'area': 'krayot'}),
 ]
 # each region gets its own catalog file; the site picks one by the town in the address
 REGIONS = {
@@ -61,6 +67,9 @@ REGIONS = {
     'afula': {'file': 'catalog-afula.json', 'stores': ['SH', 'CO', 'TO', 'RA', 'OF', 'YA', 'KA'],
               'areas': [['delivery', 'משלוח או איסוף עצמי', 'שופרסל, קרפור, טיב טעם'],
                         ['afula', 'קנייה בסניפים בעפולה', 'רמי לוי, אושר עד, יוחננוף, קשת טעמים']]},
+    'krayot': {'file': 'catalog-krayot.json', 'stores': ['SH', 'CO', 'TO', 'DB', 'RK', 'OK', 'YK', 'KK'],
+               'areas': [['delivery', 'משלוח או איסוף עצמי', 'שופרסל, קרפור, טיב טעם'],
+                         ['krayot', 'קנייה בסניפים בקריות', 'סאלח דבאח, רמי לוי, אושר עד, יוחננוף, קשת טעמים']]},
 }
 CLUB_OK = {'SH'}  # the family is a Shufersal club member
 EXC = re.compile('קופון|מתנה|ומעלה|סיבוס|סודקסו|עובד|כרטיס|ביטוח|אשראי|תן ביס|גיפט|שובר|נקודות|ארגון|הקרן|עמותת')
@@ -113,7 +122,8 @@ def fetch_cerberus(p):
     op = opener(); base = 'https://url.publishedprices.co.il'
     h = get(op, base + '/login').decode('utf-8', 'replace')
     tok = re.search(r'name="csrftoken" content="([^"]+)"', h).group(1)
-    get(op, base + '/login/user', {'r': '', 'username': p['user'], 'password': '', 'Submit': 'Sign in', 'csrftoken': tok})
+    # most chains publish with an empty password; a few use the public one they list for the transparency site
+    get(op, base + '/login/user', {'r': '', 'username': p['user'], 'password': p.get('password', ''), 'Submit': 'Sign in', 'csrftoken': tok})
     h = get(op, base + '/file').decode('utf-8', 'replace')
     tok = re.search(r'name="csrftoken" content="([^"]+)"', h).group(1)
     j = json.loads(get(op, base + '/file/json/dir', {'sEcho': '1', 'iColumns': '5', 'iDisplayStart': '0', 'iDisplayLength': '100000', 'sSearch': '', 'cd': '/', 'csrftoken': tok}))
