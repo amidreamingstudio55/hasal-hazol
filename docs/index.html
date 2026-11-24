@@ -514,7 +514,14 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     [/^פרורי לחם|^פירורי לחם/, 'פירורי לחם'],
     [/^נייר כסף/, 'רדיד אלומיניום'],
     [/^נרות נשמה|^נר נשמה/, 'נר נשמה'],
-    [/^גמבה/, 'פלפל אדום'],
+    [/^גמבה|^פלפל אדום$/, '~פלפל אדום'],
+    [/^פלפל שחור/, '%^פלפל שחור טחון'],
+    [/^(פטרוזליה|כוסברה|שמיר|נענע|בזיליקום|כרפס)$/, '%HERB'],
+    [/^סוכר$|^סוכר לבן/, '%^סוכר( סוגת)? לבן'],
+    [/^נייר סופג|^מגבות נייר/, 'מגבות נייר'],
+    [/^קורנפלקס (קופסאות|קופסא|מארז|אישי|קטנ)/, '%^מארז קורנפלקס|^קורנפלקס.*(מארז|אישי|מיני)'],
+    [/^תמרים (עם|ו)אגוזים|^תמר(ים)? ממולא/, 'תמרים אגוזים'],
+    [/^דגים$|^דג$|^פילה דג$/, '%^פילה (סלמון|אמנון|מושט|בקלה|הייק|נסיכת|לברק|דניס|טילפיה|מוסר)(?!.*(מעושן|מלוח|כבוש|בשמן|ברוטב|פרוס))'],
     [/^תפוחי אדמה|^תפוח אדמה/, '~תפוח אדמה|תפו"א'],
     [/^מלפפונים|^מלפפון/, '~מלפפון'],
     [/^עגבניות$|^עגבניה$/, '~עגבני'],
@@ -595,7 +602,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   function queryFor(text){
     const t = text.replace(/['׳`]/g,'');
     for (const [re, q] of SYN) if (re.test(t)) return q;
-    if (PRODUCE.some(p => t.startsWith(p))) return '~' + t.split(' ')[0].replace(/ים$|ות$/, '');
+    if (!/ (עם|ו?אגוזים|ממולא|מיובש|קפוא|יבש|טחון|קלוי) /.test(' ' + t + ' ') && t.trim().split(/\s+/).length <= 2 && PRODUCE.some(p => t.startsWith(p))) return '~' + t.split(' ')[0].replace(/ים$|ות$/, '');
     return t;
   }
   const unit = (it, k, qty) => { const p = it[4][k]; if (!(p > 0)) return null; const pr = it[5][k]; return (pr && qty >= pr[0] && (SET.club || !pr[2])) ? pr[1] : p; };
@@ -607,7 +614,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     let x = (' ' + t + ' ').toLowerCase().replace(/[״"'׳`]/g, '').replace(/[ךםןףץ]/g, c => FINAL[c])
       .replace(/([\u05d0-\u05ea])(\d)/g, '$1 $2').replace(/(\d%?)([\u05d0-\u05ea])/g, '$1 $2').replace(/[+*]/g, ' ').replace(/\s+/g, ' ');
     x = x.replace(/ (ללס|ללתס|ללא תס)(?= )/g, ' ללא סוכר').replace(/ ללג(?= )/g, ' ללא גלוטנ');
-    x = x.replace(/ (למריחה|מריחה|ממרחי)(?= )/g, ' ממרח');
+    x = x.replace(/ (למריחה|מריחה|ממרחי)(?= )/g, ' ממרח').replace(/ עופ טוב(?= )/g, ' עופטוב');
     x = x.replace(/ (דבח|דאבח|דבאך|דאבאח|דבאכ|דבכ)(?= )/g, ' דבאח').replace(/ (סלאח|סאלכ|סלח)(?= דבאח )/g, ' סאלח');
     x = x.replace(/ (תחתוניות|תחתוניה|תחתונית|פנטילינר|פנטי ליינר|ליינרימ)(?= )/g, ' מגנ תחתונ').replace(/ מגני תחתונימ(?= )/g, ' מגנ תחתונ').replace(/ (אולווייז|אולוויז|אולויז|אולוייז|אולווז)(?= )/g, ' always');
     x = x.replace(/ ל[\/.]ס\.?(?= )/g, ' ללא סוכר').replace(/ (ללא|בלי) תוספת סוכר(?= )/g, ' ללא סוכר')
@@ -659,7 +666,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       const ps = it[4].filter(p => p > 0).sort((a,b) => a-b);
       const brand = w.some(x => x >= 6 && x < 99);  // a rare word such as a brand name: the product type does not matter as much
       const combo = !brand && / עמ | סלט | ממרח | פסטה | רוטב | כריכ | ארוחה /.test(n) && !/ עמ | סלט | ממרח | פסטה | רוטב /.test(qn);
-      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|וופל|קרמ|פודינג|טבלי|מוס|בראוני|ביסקוויט|ביסקוויטימ|ללא|לקטוז|לקטז|סויה|שקדימ|שיבולת) /g) || []).some(w => !qn.includes(w));
+      const other = (n.match(/ (מעדנ|משקה|חטיפ|עוגיות|עוגיה|גלידה|דגני|קראנצ|ביסלי|פריכיות|ופל|וופל|קרמ|פודינג|טבלי|מוס|בראוני|ביסקוויט|ביסקוויטימ|ללא|לקטוז|לקטז|סויה|שקדימ|שיבולת|וניל|אבקת|קלוי|מעושנ|מלוח|כבוש|בחומצ|מיובש|טחונ|טחונה|סוכריות|סוכריה) /g) || []).some(w => !qn.includes(w));
       score += got / total * 400 + hits * 60 + (n.startsWith(' ' + toks[0]) ? 150 : 0) + ps.length * 40 - (ps[Math.floor(ps.length/2)] || 100) * 0.3 - (combo ? 600 : 0) - (other ? 400 : 0);
       out.push({it, score, hits});
     }
@@ -692,7 +699,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
       return fm;
     }
     if (q.startsWith('%')) {
-      const re = new RegExp(q.slice(1));
+      const re = q === '%HERB' ? new RegExp('^' + line.text.trim().replace(/['׳`]/g, '') + '(?!.*(טחונ|צנצנת|מיובש|גרם|ג\'|קפוא|קוביות|תבלין))') : new RegExp(q.slice(1));
       let cands = CAT.filter(it => re.test(it[1]) && !/עוגה|בראוני|נאצ|אטריות|חטיף/.test(it[1]));
       const lowest = it => Math.min(...it[4].filter(p => p > 0));
       cands.sort((a,b) => (b[4].filter(p => p > 0).length - a[4].filter(p => p > 0).length) || (lowest(a) - lowest(b)));
@@ -713,16 +720,58 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
     if (i >= 0) { m.chosen = i; m.remembered = true; }
     return m;
   }
+  // package size in grams or ml, from the product name ("1קג", "500 גרם", "10*10 גרם", "1.5 ליטר"); null when unknown
+  function sizeOf(it){
+    if (it._sz !== undefined) return it._sz;
+    const n = it[1].replace(/["״']/g, '');
+    let v = null, m = n.match(/(\d+(?:\.\d+)?)\s*[*x×]\s*(\d+(?:\.\d+)?)\s*(גרם|גר|ג|מל|מ"ל)?(?![\d])/);
+    if (m && m[3]) v = +m[1] * +m[2];
+    else if ((m = n.match(/(\d+(?:\.\d+)?)\s*(קג|ק"ג|קילו|ליטר|ל)(?![א-ת])/))) v = +m[1] * 1000;
+    else if ((m = n.match(/(\d+(?:\.\d+)?)\s*(גרם|גר|ג|מל|מ"ל)(?![א-ת])/))) v = +m[1];
+    return (it._sz = v && v > 0 && v < 50000 ? v : null);
+  }
+  // the typical package size of a line's choices, so "cheapest" means cheapest per kilo among normal sizes,
+  // not a 10-gram sachet and not a 5-kilo sack
+  function typicalSize(m){
+    if (m._typ !== undefined) return m._typ;
+    const z = m.cands.map(sizeOf).filter(Boolean).sort((a, b) => a - b);
+    return (m._typ = z.length ? z[Math.floor(z.length / 2)] : null);
+  }
   function linePrice(m, k){
     const qty = m.line.qty;
-    if (m.mode === 'fresh' || m.chosen === 'cheapest') {
+    if (m.mode === 'fresh') {
       let best = null;
       for (const it of m.cands) { const u = unit(it, k, qty); if (u != null && (best == null || u < best.u)) best = {u, it}; }
-      const f = m.mode === 'fresh' ? m.kg : 1;
-      return best ? {total: best.u * qty * f, it: best.it, u: best.u, promo: promoAt(best.it, k, qty)} : null;
+      return best ? {total: best.u * qty * m.kg, it: best.it, u: best.u, promo: promoAt(best.it, k, qty)} : null;
+    }
+    if (m.chosen === 'cheapest') {
+      const typ = typicalSize(m);
+      let best = null;
+      for (const it of m.cands) {
+        const u = unit(it, k, qty); if (u == null) continue;
+        const z = it[3] === 1 ? 1000 : sizeOf(it);
+        if (typ && z && it[3] !== 1 && (z < typ / 2.5 || z > typ * 2.5)) continue;   // a sachet or a sack: not the same buy
+        const key = typ && z ? u / z : u + 1e6;                                     // per gram when the size is known
+        if (best == null || key < best.key) best = {u, it, key};
+      }
+      return best ? {total: best.u * qty, it: best.it, u: best.u, promo: promoAt(best.it, k, qty)} : null;
     }
     const it = m.cands[m.chosen]; if (!it) return null;
-    const u = unit(it, k, qty); return u == null ? null : {total: u * qty, it, u, promo: promoAt(it, k, qty)};
+    const u = unit(it, k, qty);
+    if (u != null) return {total: u * qty, it, u, promo: promoAt(it, k, qty)};
+    // the product we picked isn't sold here; if the shopper didn't pick it by hand, take the next close match this chain has
+    if (m.remembered || m.approx) return null;
+    const words = x => norm(x[1]).split(' ').filter(w => w.length > 1 && !/\d/.test(w));
+    const mine = words(it);
+    for (let i = 0; i < m.cands.length; i++) {
+      const a = m.cands[i], aw = words(a);
+      // only the same kind of product: same first word and at least one more word in common ("נייר טואלט ...")
+      if (a === it || aw[0] !== mine[0] || aw.filter(w => mine.includes(w)).length < 2) continue;
+      const za = sizeOf(a), zi = sizeOf(it); if (za && zi && (za < zi / 2.5 || za > zi * 2.5)) continue;
+      const ua = unit(a, k, qty);
+      if (ua != null) return {total: ua * qty, it: a, u: ua, promo: promoAt(a, k, qty), alt: true};
+    }
+    return null;
   }
   function ensureMatches(){
     if (!dirty || !CAT.length) return;
@@ -1287,7 +1336,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
   // ---------- ordering online from the phone ----------
   // chains whose site takes a whole pasted list (tested 11/2026)
   const QUICK = {
-    SH: {url: 'https://www.shufersal.co.il/online/he/quick-buy?isWishLists=false', steps: ['באתר שנפתח לוחצים לחיצה ארוכה בתיבה ← "הדבקה"', 'לוחצים "צרו לי רשימה"', 'בודקים את המוצרים, מתקנים כמויות ב־+ (האתר מתחיל ב־1) ולוחצים "הוספה לסל"']},
+    SH: {url: 'https://www.shufersal.co.il/online/he/quick-buy?isWishLists=false', steps: ['באתר שנפתח לוחצים לחיצה ארוכה בתיבה ← "הדבקה"', 'לוחצים "צרו לי רשימה"', 'בודקים את המוצרים מול הרשימה כאן למטה. האתר מחפש לפי שם ולפעמים בוחר מוצר אחר או מדלג: מוצר כזה מוחקים שם, ולוחצים כאן "לאתר" ליד המוצר הנכון', 'מתקנים כמויות ב־+ (האתר מתחיל ב־1) ולוחצים "הוספה לסל"']},
     RL: {url: 'https://www.rami-levy.co.il/he', steps: ['באתר שנפתח לוחצים "קניה מהירה" (למעלה)', 'לחיצה ארוכה בתיבה ← "הדבקה", ואז "המשך"', 'לכל שורה לוחצים + על המוצר המתאים (כמה פעמים כמו הכמות), ורק אז "הבא"'], warn: 'רמי לוי לא מוסיף לבד: ליד כל מוצר הכמות מתחילה ב־0. אם לוחצים רק "הבא" בלי +, הסל נשאר ריק.'}
   };
   QUICK.RR = QUICK.RL;
@@ -1433,7 +1482,7 @@ summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:
                                           : (r.m.line.qty !== 1 ? r.m.line.qty + ' × ' : '') + r.p.it[1];
         const link = SHOP_LINK[s.id] ? el('a', {class:'golink', href: SHOP_LINK[s.id](shopQuery(r.p.it)), target:'_blank', rel:'noopener', 'aria-label':'פתיחה באתר ' + s.name + ': ' + r.p.it[1], text:'לאתר'}) : null;
         box.append(el('div', {style:'display:flex;gap:6px;align-items:center'},
-          el('label', {class:'srow', style:'flex:1;min-width:0'}, cb, pic(r.m.mode === 'pack' ? r.p.it[0] : null, r.m.line.text, true), el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})), link));
+          el('label', {class:'srow', style:'flex:1;min-width:0'}, cb, pic(r.m.mode === 'pack' ? r.p.it[0] : null, r.m.line.text, true), el('span', {class:'n'}, name, r.p.promo ? ' ' : '', r.p.promo ? el('span', {class:'tag', text:'מבצע'}) : null, r.p.alt ? ' ' : '', r.p.alt ? el('span', {class:'tag', title:'המוצר שבחרנו לא נמכר כאן, זה הכי דומה', text:'חלופה'}) : null), el('span', {class:'pr', text: fmt(r.p.total) + ' ₪'})), link));
       });
     });
     if (SITE[s.id]) box.prepend(orderBox(o, s, rows, checks));
